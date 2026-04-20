@@ -1,6 +1,12 @@
-import { TherapySession, SessionTurn, TherapyResponse, PhotoMetadata } from './types'
+import { TherapySession, SessionTurn, TherapyResponse, PhotoMetadata, MemoryLibraryItem, FamilySpaceContext } from './types'
 import { TherapyBrain } from './therapy-brain'
 import { SafetyMonitor } from './safety-monitor'
+
+export interface ExtraSessionContext {
+  previous_sessions_summary?: string
+  memory_library?: MemoryLibraryItem[]
+  family_space?: FamilySpaceContext
+}
 
 export class SessionOrchestrator {
   private therapyBrain: TherapyBrain
@@ -16,7 +22,8 @@ export class SessionOrchestrator {
   async processTurn(
     session: TherapySession,
     userMessage: string,
-    photoMetadata?: PhotoMetadata
+    photoMetadata?: PhotoMetadata,
+    extraContext?: ExtraSessionContext
   ): Promise<TherapyResponse> {
     // Safety check first
     const safetyCheck = this.safetyMonitor.checkSafety(userMessage)
@@ -44,10 +51,13 @@ export class SessionOrchestrator {
       return this.getCloseOfferResponse()
     }
 
-    // Generate therapy response
+    // Generate therapy response with full context (memory library, family space, previous sessions)
     const context = {
       session,
       photo_metadata: photoMetadata,
+      previous_sessions_summary: extraContext?.previous_sessions_summary,
+      memory_library: extraContext?.memory_library,
+      family_space: extraContext?.family_space,
     }
 
     const response = await this.therapyBrain.generateResponse(userMessage, context)

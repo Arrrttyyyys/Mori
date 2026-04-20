@@ -9,26 +9,33 @@ export default function Auth() {
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const { login, signup } = useAuth()
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
+    setSubmitting(true)
 
-    if (isSignIn) {
-      const success = login(email, password)
-      if (!success) {
-        setError('Invalid email or password. Please try again.')
+    try {
+      if (isSignIn) {
+        const result = await login(email, password)
+        if (!result.ok) {
+          setError(result.error ?? 'Invalid email or password. Please try again.')
+        }
+      } else {
+        if (!name.trim()) {
+          setError('Please enter your name.')
+          setSubmitting(false)
+          return
+        }
+        const result = await signup(email, password, name)
+        if (!result.ok) {
+          setError(result.error ?? 'Unable to create account. Please try again.')
+        }
       }
-    } else {
-      if (!name.trim()) {
-        setError('Please enter your name.')
-        return
-      }
-      const success = signup(email, password, name)
-      if (!success) {
-        setError('Unable to create account. Please try again.')
-      }
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -111,9 +118,10 @@ export default function Auth() {
                 Email
               </label>
               <input
-                type="text"
+                type="email"
                 id="email"
                 name="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-500 text-lg"
@@ -152,9 +160,10 @@ export default function Auth() {
 
             <button
               type="submit"
-              className="w-full bg-primary text-white py-4 rounded-xl hover:opacity-90 transition-opacity duration-500 text-lg font-medium shadow-lg"
+              disabled={submitting}
+              className="w-full bg-primary text-white py-4 rounded-xl hover:opacity-90 transition-opacity duration-500 text-lg font-medium shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {isSignIn ? 'Sign In' : 'Create Account'}
+              {submitting ? 'Please wait…' : isSignIn ? 'Sign In' : 'Create Account'}
             </button>
           </form>
 

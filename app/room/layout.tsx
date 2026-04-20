@@ -9,16 +9,17 @@ export default function RoomLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, loading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
+    if (loading) return
     if (!isAuthenticated) {
       router.push('/auth')
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, loading, router])
 
-  if (!isAuthenticated) {
+  if (loading || !isAuthenticated) {
     return null
   }
 

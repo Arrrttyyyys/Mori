@@ -75,8 +75,8 @@ export default function RoomWelcome() {
               className="bg-secondary/50 rounded-[1.5rem] p-8 md:p-10 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group flex items-start gap-6"
             >
               {/* Icon Circle */}
-              <div className="flex-shrink-0 w-20 h-20 rounded-full bg-secondary/80 flex items-center justify-center border-2 border-primary/30">
-                <div className="text-primary">
+              <div className="flex-shrink-0 w-20 h-20 rounded-full bg-secondary/80 flex items-center justify-center border-2 border-primary/30 group-hover:border-primary-dark transition-colors duration-500">
+                <div className="text-primary group-hover:text-primary-dark transition-colors duration-500">
                   {card.icon}
                 </div>
               </div>

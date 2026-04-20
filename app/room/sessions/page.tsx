@@ -7,7 +7,7 @@ import { TherapySession } from '@/lib/therapy/types'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function MemorySessions() {
-  const { userName } = useAuth()
+  const { userId } = useAuth()
   const [isWaiting, setIsWaiting] = useState(false)
   const [activeSession, setActiveSession] = useState<TherapySession | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -18,9 +18,9 @@ export default function MemorySessions() {
 
   const handleReadyToBegin = async () => {
     try {
-      // Create or get session - use user name or default
-      const userId = userName || 'default_user'
-      const response = await fetch(`/api/therapy/session?user_id=${encodeURIComponent(userId)}`, {
+      // Create session for this account (user_id scopes backend data)
+      const uid = userId || 'default_user'
+      const response = await fetch(`/api/therapy/session?user_id=${encodeURIComponent(uid)}`, {
         method: 'GET',
       })
       const data = await response.json()
@@ -72,7 +72,7 @@ export default function MemorySessions() {
             >
               <path d="M15 19l-7-7 7-7" />
             </svg>
-            Back
+            Back to your room
           </Link>
           <h1 className="text-4xl md:text-5xl font-semibold text-text">
             Memory Sessions

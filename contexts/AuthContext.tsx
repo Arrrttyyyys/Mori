@@ -2,69 +2,98 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
+import { User, Session } from '@supabase/supabase-js'
+import { getSupabaseBrowserClient } from '@/lib/supabase/client'
 
 interface AuthContextType {
   isAuthenticated: boolean
   userName: string | null
-  login: (email: string, password: string) => boolean
-  signup: (email: string, password: string, name: string) => boolean
-  logout: () => void
+  userId: string | null
+  login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>
+  signup: (email: string, password: string, name: string) => Promise<{ ok: boolean; error?: string }>
+  logout: () => Promise<void>
+  loading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [userName, setUserName] = useState<string | null>(null)
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    // Check if user is authenticated on mount
-    const authStatus = localStorage.getItem('mori_authenticated')
-    const storedName = localStorage.getItem('mori_user_name')
-    if (authStatus === 'true') {
-      setIsAuthenticated(true)
-      if (storedName) {
-        setUserName(storedName)
-      }
+    const supabase = getSupabaseBrowserClient()
+    if (!supabase) {
+      setLoading(false)
+      return
     }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session: Session | null) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  const login = (email: string, password: string): boolean => {
-    // Hardcoded credentials
-    if (email === 'arty' && password === '1234') {
-      setIsAuthenticated(true)
-      const storedName = localStorage.getItem('mori_user_name') || 'Sarah'
-      setUserName(storedName)
-      localStorage.setItem('mori_authenticated', 'true')
-      router.push('/room')
-      return true
+  const login = async (email: string, password: string): Promise<{ ok: boolean; error?: string }> => {
+    const supabase = getSupabaseBrowserClient()
+    if (!supabase) {
+      return { ok: false, error: 'Auth is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local' }
     }
-    return false
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      return { ok: false, error: error.message }
+    }
+    if (data.user) {
+      router.push('/room')
+      return { ok: true }
+    }
+    return { ok: false, error: 'Sign in failed' }
   }
 
-  const signup = (email: string, password: string, name: string): boolean => {
-    // Store user data
-    setIsAuthenticated(true)
-    setUserName(name)
-    localStorage.setItem('mori_authenticated', 'true')
-    localStorage.setItem('mori_user_name', name)
-    localStorage.setItem('mori_user_email', email)
-    router.push('/room')
-    return true
+  const signup = async (email: string, password: string, name: string): Promise<{ ok: boolean; error?: string }> => {
+    const supabase = getSupabaseBrowserClient()
+    if (!supabase) {
+      return { ok: false, error: 'Auth is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local' }
+    }
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name: name.trim() } },
+    })
+    if (error) {
+      return { ok: false, error: error.message }
+    }
+    if (data.user) {
+      router.push('/room')
+      return { ok: true }
+    }
+    return { ok: false, error: 'Sign up failed' }
   }
 
-  const logout = () => {
-    setIsAuthenticated(false)
-    setUserName(null)
-    localStorage.removeItem('mori_authenticated')
-    localStorage.removeItem('mori_user_name')
-    localStorage.removeItem('mori_user_email')
+  const logout = async () => {
+    const supabase = getSupabaseBrowserClient()
+    if (supabase) await supabase.auth.signOut()
+    setUser(null)
     router.push('/')
   }
 
+  const userName = user?.user_metadata?.name ?? user?.email ?? null
+  const userId = user?.id ?? null
+  const isAuthenticated = !!user
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, userName, login, signup, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, userName, userId, login, signup, logout, loading }}>
       {children}
     </AuthContext.Provider>
   )

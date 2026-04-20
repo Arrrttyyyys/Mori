@@ -686,6 +686,7 @@ export default function TherapyInterface({ sessionId, onClose }: TherapyInterfac
     setIsProcessing(true)
 
     try {
+      // Backend loads Memory Library and Family Space by session.user_id (account-specific)
       console.log('📡 Calling API with session_id:', sessionId, 'message:', transcript)
       const response = await fetch('/api/therapy/session', {
         method: 'POST',

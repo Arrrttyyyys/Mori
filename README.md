@@ -56,6 +56,34 @@ npm start
 - **Style**: Rounded corners, soft shadows, gentle transitions
 - **Accessibility**: Large text, good contrast, semantic HTML
 
+## Supabase (Auth & Photo Storage)
+
+The app uses Supabase for sign-in/sign-up and for storing photos uploaded in the Memory Library.
+
+### Environment variables
+
+Add to `.env.local` (get values from [Supabase Dashboard](https://supabase.com/dashboard) → your project → Settings → API):
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### Storage bucket for photos
+
+Photos uploaded by patients and families are stored in Supabase Storage. Create the bucket once:
+
+1. In Supabase Dashboard go to **Storage** and **New bucket**.
+2. Name: `memories`. Optionally make it **Public** so image URLs work without signed links.
+3. Under **Policies** for the `memories` bucket, add:
+   - **INSERT**: Allow authenticated users to upload only to their own folder.  
+     Policy: `(bucket_id = 'memories') AND ((storage.foldername(name))[1] = auth.uid()::text)`
+   - **DELETE**: Same condition so users can only delete their own files.  
+     Policy: `(bucket_id = 'memories') AND ((storage.foldername(name))[1] = auth.uid()::text)`
+   - **SELECT**: For a public bucket you can allow all; or use the same folder condition for private access.
+
+Files are stored under `memories/{userId}/{unique-filename}.jpg` (or .png, .gif, .webp).
+
 ## Tech Stack
 
 - Next.js 14 (App Router)
@@ -63,3 +91,4 @@ npm start
 - TypeScript
 - Tailwind CSS
 - Google Fonts (Lora)
+- Supabase (Auth + Storage)

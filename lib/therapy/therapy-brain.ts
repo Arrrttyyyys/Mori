@@ -1,4 +1,4 @@
-import { TherapyResponse, SessionContext } from './types'
+import { TherapyResponse, SessionContext, MemoryLibraryItem } from './types'
 
 const THERAPY_SYSTEM_PROMPT = `You are Mori, a calm and gentle reminiscence companion.
 
@@ -31,6 +31,16 @@ CORE PRINCIPLES:
 
 8. ASK MEANINGFUL QUESTIONS: Questions should flow naturally from what they've shared. Don't ask generic questions - ask about specific things they mentioned.
 
+9. DEEPER EMPATHY (not generic validation): Briefly mirror what they said in your own words so it feels personal — e.g. if they are sad but unsure why, acknowledge that mixed feeling ("sometimes sadness shows up without a clear reason, and that can feel confusing") before you ask anything. Avoid repeating the same stock line twice in a row (e.g. don't keep saying only "I hear you"). Name the emotional texture when it helps (lonely, heavy, tender, mixed).
+
+10. WHEN THEY DON'T KNOW WHAT TO SAY OR HOW THEY FEEL: If the user is vague, stuck, says they don't know what they're feeling, or isn't sure what to talk about, do NOT only ask "what else would you like to share?" Instead:
+    - Normalize: it's okay not to have words for everything; there's no quiz.
+    - Lead gently: offer ONE concrete thread they can take or leave — preferably from the Memory Library list below (mention a specific saved title) OR from Family Space (a topic a loved one noted) OR a simple sensory/seasonal opener only if those lists are empty.
+    - Keep it invitational, never testing: "We could wander toward…" / "I'm curious, when you see the title '…' — does anything stir, or shall we skip it?"
+    - You may weave the memory offer into spoken_response and still end with one gentle next_question (or combine into a single warm invitation if that flows better).
+
+11. USE SAVED MEMORIES PROACTIVELY: The Memory Library and Family Space sections are there so you can bring warmth and direction when conversation slows. Use them especially after sadness, uncertainty, or short answers — always one idea at a time, always gentle.
+
 You must:
 
 - speak slowly and warmly
@@ -53,8 +63,9 @@ You must never:
 - give medical advice
 - diagnose conditions
 - pressure the user for answers
-- ask generic questions when you have context
+- ask generic questions when you have context (especially when Memory Library or Family Space lists are non-empty — use them instead of "what else?")
 - ignore what they just said
+- loop on vague prompts like "what else would you like to share?" when the user already said they are unsure — pivot to a memory or family-space thread instead
 
 If the user is confused, respond with comfort.
 If the user is distressed, respond with reassurance.
@@ -98,10 +109,12 @@ export class TherapyBrain {
     const previousSessionsContext = context.previous_sessions_summary
       ? `\n\nPrevious sessions context: ${context.previous_sessions_summary}`
       : ''
+    const memoryLibraryContext = this.buildMemoryLibraryContext(context)
+    const familySpaceContext = this.buildFamilySpaceContext(context)
 
     const userPrompt = `${THERAPY_SYSTEM_PROMPT}
 
-${photoContext}${previousSessionsContext}
+${photoContext}${previousSessionsContext}${memoryLibraryContext}${familySpaceContext}
 
 Current conversation:
 ${conversationHistory}
@@ -211,8 +224,30 @@ Respond with ONLY valid JSON in this exact format:
     }
     // NEGATIVE EMOTIONS - Check for these before positive responses
     else if (msg.match(/\b(sad|lonely|miss|missed|hard|difficult|tough|struggling|worried|anxious|scared|afraid|down|upset)\b/)) {
-      spoken = "I understand that feeling."
-      question = "Would you like to talk about it?"
+      const unsure =
+        /\bnot\s+sure\b/.test(msg) ||
+        /\bnot\s+exactly\s+sure\b/.test(msg) ||
+        /\bunsure\b/.test(msg) ||
+        msg.includes("don't know") ||
+        msg.includes('dont know') ||
+        msg.includes('confus')
+      if (unsure) {
+        spoken =
+          "Thank you for saying that. Sadness can show up without a clear story, and that can feel unsettling — you're not doing anything wrong."
+        const mem = this.pickMemoryLibraryOffer(context)
+        const fam = this.pickFamilySpaceOffer(context)
+        if (mem) {
+          question = `We don't have to figure it all out. When you're ready, we could gently visit a saved memory — you have one called "${mem.title}". Does that sound okay, or would you rather stay with how you feel right now?`
+        } else if (fam) {
+          question = `There's no rush to name it. Your family once noted something about "${fam.topic}" — would you like to wander that way, or just sit with this feeling a little?`
+        } else {
+          question =
+            "Would it help to describe it in the body — heavy, quiet, tight — or shall we take a slow breath together and see what comes?"
+        }
+      } else {
+        spoken = "That sounds really hard. I'm glad you're telling me."
+        question = "What part of it feels heaviest today?"
+      }
       emotionalState = "reflective"
     }
     // Positive responses - BUT check for contradictions first
@@ -281,10 +316,43 @@ Respond with ONLY valid JSON in this exact format:
       }
       emotionalState = "reflective"
     }
-    // Confusion or uncertainty
-    else if (msg.includes('don\'t remember') || msg.includes('forgot') || msg.includes('not sure') || msg.includes('confused') || msg.includes('can\'t recall')) {
+    // Stuck / don't know what to talk about (but not memory-loss wording)
+    else if (
+      msg.match(/\b(don't know what to (say|talk)|nothing to (say|talk)|not sure what to (say|talk)|no idea what to)\b/) ||
+      (msg.includes('nothing') && msg.includes('mind'))
+    ) {
+      spoken = "That's all right. You don't need a topic — I'm right here with you."
+      const mem = this.pickMemoryLibraryOffer(context)
+      if (mem) {
+        question = `If a little direction would feel kind, we could look toward a photo you saved — "${mem.title}". Only if you'd like; we can also stay quiet.`
+      } else {
+        const fam = this.pickFamilySpaceOffer(context)
+        if (fam) {
+          question = `Sometimes a small thread helps: your loved ones left a note about "${fam.topic}". Curious to explore that, or would you prefer I share something gentle about the season?`
+        } else {
+          question = "Would you enjoy hearing a tiny story about a summer afternoon, or shall we simply be still for a moment?"
+        }
+      }
+      emotionalState = "calm"
+    }
+    // Confusion or uncertainty (memory recall)
+    else if (msg.includes('don\'t remember') || msg.includes('forgot') || msg.includes('can\'t recall')) {
       spoken = "That's okay. Sometimes memories take time to come back."
       question = "Is there anything that does come to mind?"
+      emotionalState = "calm"
+    }
+    else if (
+      (/\bnot\s+sure\b/.test(msg) || /\bnot\s+exactly\s+sure\b/.test(msg) || /\bunsure\b/.test(msg)) &&
+      (msg.includes('feel') || msg.includes('feeling') || msg.includes('about') || msg.includes('why'))
+    ) {
+      spoken =
+        "Mixed or unclear feelings are so human. You don't owe me a neat label."
+      const mem = this.pickMemoryLibraryOffer(context)
+      if (mem) {
+        question = `When you're ready, we could let your mind drift toward "${mem.title}" — no quiz, just company. Does that feel okay?`
+      } else {
+        question = "What would feel kindest right now — a little silence, or a soft question from me?"
+      }
       emotionalState = "calm"
     }
     // Questions about Mori
@@ -299,11 +367,22 @@ Respond with ONLY valid JSON in this exact format:
       if (msg.includes('when i') || msg.includes('i used to') || msg.includes('i remember')) {
         spoken = "Thanks for sharing that with me. That sounds meaningful."
         question = "What else comes up when you think about that time?"
+      } else if (
+        /\bnot\s+exactly\s+sure\b/.test(msg) ||
+        (msg.includes('sure') && msg.includes('feel'))
+      ) {
+        spoken =
+          "It makes sense you'd feel a little lost when the feeling doesn't have a clear name yet. I'm still right here with you."
+        const mem = this.pickMemoryLibraryOffer(context)
+        question = mem
+          ? `When you want a soft place to land, we could visit the memory "${mem.title}" — only if it feels right.`
+          : "Would a quiet moment feel better, or one small question from me?"
+        emotionalState = "calm"
       } else {
-        spoken = "I hear what you're saying. That's important."
-        question = "What else would you like to share about that?"
+        spoken = "I'm taking that in with you — thank you for trusting me with it."
+        question = "What feels most true for you in this moment, even in a word or two?"
+        emotionalState = "reflective"
       }
-      emotionalState = "reflective"
     }
     // Short responses - encourage more
     else if (msg.length < 10) {
@@ -385,6 +464,19 @@ Respond with ONLY valid JSON in this exact format:
     }
   }
 
+  /** First saved memory title for gentle prompts when user is stuck (mock + aligns with LLM instructions). */
+  private pickMemoryLibraryOffer(context?: SessionContext): MemoryLibraryItem | null {
+    const items = context?.memory_library
+    if (!items?.length) return null
+    return items[0]
+  }
+
+  private pickFamilySpaceOffer(context?: SessionContext): { topic: string } | null {
+    const summaries = context?.family_space?.session_summaries
+    if (summaries?.length) return { topic: summaries[0].topic }
+    return null
+  }
+
   private buildConversationHistory(context: SessionContext): string {
     if (context.session.turns.length === 0) {
       return 'This is the beginning of the conversation.'
@@ -424,5 +516,39 @@ Mori: ${turn.therapist_response.spoken_response} ${turn.therapist_response.next_
     photoContext += `\nIMPORTANT: Ask about the photo, do not state facts. For example, ask "Do you recognize anyone in this picture?" not "This is your sister."`
 
     return photoContext
+  }
+
+  private buildMemoryLibraryContext(context: SessionContext): string {
+    const items = context.memory_library
+    if (!items || items.length === 0) return ''
+
+    const lines = items
+      .slice(0, 20) // Limit to 20 for prompt size
+      .map((m) => `- "${m.title}" (added ${m.date})`)
+      .join('\n')
+    return `\n\nMemory Library (photos/memories the person has saved; titles only):\n${lines}\nWhen the user is sad, quiet, or unsure what to talk about, warmly offer ONE of these titles as a possible path — quote the title naturally, no pressure. If they decline, accept that and try another angle later.`
+  }
+
+  private buildFamilySpaceContext(context: SessionContext): string {
+    const fs = context.family_space
+    if (!fs) return ''
+
+    const parts: string[] = []
+    if (fs.session_summaries && fs.session_summaries.length > 0) {
+      const summaries = fs.session_summaries
+        .slice(0, 10)
+        .map((s) => `- ${s.date}: ${s.topic}. ${s.summary}`)
+        .join('\n')
+      parts.push(`Recent session summaries (from family/caregiver space):\n${summaries}`)
+    }
+    if (fs.reflections && fs.reflections.length > 0) {
+      const reflections = fs.reflections
+        .slice(0, 5)
+        .map((r) => `- ${r.text}`)
+        .join('\n')
+      parts.push(`Mori's reflections (gentle observations to build on):\n${reflections}`)
+    }
+    if (parts.length === 0) return ''
+    return `\n\nFamily Space context (from loved ones — use to gently suggest topics when the user feels stuck):\n${parts.join('\n\n')}\nWhen conversation stalls, you may reference ONE topic or reflection here as a soft invitation, not as fact about the user.`
   }
 }

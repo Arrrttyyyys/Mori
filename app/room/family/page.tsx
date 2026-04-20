@@ -1,29 +1,37 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function FamilySpace() {
-  // Placeholder data
-  const sessionSummaries = [
-    {
-      id: 1,
-      date: 'December 15, 2024',
-      topic: 'Summer vacations at the lake house',
-      summary: 'Sarah shared memories of summer vacations at the lake house, including details about her grandfather\'s fishing trips.',
-    },
-  ]
+  const { userId } = useAuth()
+  const [sessionSummaries, setSessionSummaries] = useState<Array<{ id: number; date: string; topic: string; summary: string }>>([])
+  const [reflections, setReflections] = useState<Array<{ id: number; text: string }>>([])
+  const [loading, setLoading] = useState(true)
 
-  const reflections = [
-    {
-      id: 1,
-      text: 'Sarah often speaks fondly of nature and outdoor activities. She seems especially connected to memories involving water.',
-    },
-  ]
+  useEffect(() => {
+    if (!userId) {
+      setLoading(false)
+      return
+    }
+    fetch(`/api/user/${encodeURIComponent(userId)}/family-space`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.family_space) {
+          setSessionSummaries(data.family_space.session_summaries ?? [])
+          setReflections(data.family_space.reflections ?? [])
+        }
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [userId])
 
   return (
     <div className="min-h-screen bg-background px-6 py-12 animate-fade-in">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
+        {loading && <p className="text-text/70 py-4">Loading…</p>}
         <div className="mb-12">
           <Link
             href="/room"
@@ -40,7 +48,7 @@ export default function FamilySpace() {
             >
               <path d="M15 19l-7-7 7-7" />
             </svg>
-            Back
+            Back to your room
           </Link>
           <h1 className="text-4xl md:text-5xl font-semibold text-text mb-4">
             Family Space

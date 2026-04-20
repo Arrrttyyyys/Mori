@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { SessionOrchestrator } from '@/lib/therapy/session-orchestrator'
 import { SessionStore } from '@/lib/therapy/session-store'
 import { TherapySession } from '@/lib/therapy/types'
+import { MemoryLibraryItem } from '@/lib/therapy/types'
+import { getMemories, getFamilySpace } from '@/lib/user-data-store'
 
 const sessionStore = new SessionStore()
 const orchestrator = new SessionOrchestrator()
@@ -70,12 +72,28 @@ export async function POST(request: NextRequest) {
       session.session_id
     )
 
+    // Load Memory Library and Family Space for this account from backend store
+    const storedMemories = getMemories(session.user_id)
+    const memory_library: MemoryLibraryItem[] = storedMemories.map((m) => ({
+      id: m.id,
+      title: m.title,
+      date: m.date,
+    }))
+    const family_space = getFamilySpace(session.user_id)
+
+    const extraContext = {
+      previous_sessions_summary: previousSessionsSummary,
+      memory_library: memory_library.length > 0 ? memory_library : undefined,
+      family_space,
+    }
+
     // Process the turn
     console.log('🔄 Processing turn with orchestrator...')
     const response = await orchestrator.processTurn(
       session,
       user_message,
-      photo_metadata
+      photo_metadata,
+      extraContext
     )
     console.log('✅ Orchestrator response:', JSON.stringify(response, null, 2))
 

@@ -34,8 +34,23 @@ export interface TherapySession {
   status: 'active' | 'closed'
 }
 
+/** Memory Library item (titles/dates only for LLM context; no image data) */
+export interface MemoryLibraryItem {
+  id: number
+  title: string
+  date: string
+}
+
+/** Family Space context for Mori */
+export interface FamilySpaceContext {
+  session_summaries?: Array<{ date: string; topic: string; summary: string }>
+  reflections?: Array<{ text: string }>
+}
+
 export interface SessionContext {
   session: TherapySession
   photo_metadata?: PhotoMetadata
   previous_sessions_summary?: string
+  memory_library?: MemoryLibraryItem[]
+  family_space?: FamilySpaceContext
 }
