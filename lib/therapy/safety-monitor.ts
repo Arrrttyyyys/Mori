@@ -21,6 +21,7 @@ export class SafetyMonitor {
     'locks me in',
     'takes my money',
     'won\'t give me food',
+    'will not give me food',
   ]
 
   private panicKeywords = [

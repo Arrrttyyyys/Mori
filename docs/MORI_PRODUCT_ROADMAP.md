@@ -83,13 +83,13 @@ This document is the ordered plan for taking Mori from its current working proto
 
 **Goal:** Make local-model behavior consistent across longer and more difficult conversations.
 
-- [ ] Expand the communication suite beyond the current 11 scripted scenarios.
+- [x] Expand the communication suite beyond the current 11 scripted scenarios.
 - [ ] Run each scenario repeatedly to measure variation between generations.
 - [ ] Add multi-turn conversations lasting 10–15 minutes.
 - [ ] Test repetition without Mori mentioning that the person repeated themselves.
 - [ ] Test silence, short answers, interruptions, corrections, refusal, and changing topics.
 - [ ] Test sadness, loneliness, confusion, wanting to go home, and unverifiable beliefs.
-- [ ] Test urgent medical, abuse, and self-harm language through the deterministic safety layer.
+- [x] Test urgent medical, abuse, and self-harm language through the deterministic safety layer.
 - [ ] Test factual grounding against approved, unverified, restricted, and expired memories.
 - [ ] Reduce generic, overly flowery, complex, or recall-demanding responses.
 - [ ] Track response latency, malformed output, fallback frequency, memory use, and laptop temperature.
@@ -100,6 +100,14 @@ This document is the ordered plan for taking Mori from its current working proto
 - Repeated evaluation runs meet an agreed pass threshold.
 - Long sessions remain coherent and stay within the approved memory context.
 - Response speed remains acceptable throughout a full session on the 8 GB M1 MacBook Air.
+
+**Progress record — September 11, 2026**
+
+- Expanded the live communication evaluation from 11 to 21 scenarios, adding loneliness, unexplained sadness, confusion, silence, short answers, unclear words, topic changes, approved-memory grounding, confirmed-photo context, and session closing.
+- Added configurable repeated runs through `MORI_EVAL_RUNS`, per-scenario pass rates, fallback counts, and median, p95, and maximum latency.
+- Added a separate 12-turn continuity evaluation that carries the conversation forward and checks topic changes, quiet-time requests, recall pressure, repetition language, response length, fallback use, and latency.
+- Expanded the deterministic safety suite from 8 to 16 cases, including additional urgent medical, abuse, and general-distress language. All 16 cases pass.
+- The live Qwen evaluations have not been run in this phase because the model remains stopped. The new scenarios must establish a baseline before prompt or guard tuning is accepted.
 
 ## Phase 3 — Validate speech and audio on target devices
 
@@ -231,4 +239,4 @@ At the start of each work session, select the first unchecked item in the curren
 
 ## Next action
 
-Connect an in-app browser session, then complete the two remaining Phase 1 checks: responsive visual inspection at desktop, tablet, and phone sizes, followed by hands-on keyboard and screen-reader verification.
+Run the expanded Phase 2 live communication baseline with repeated generations, then use its failures to tune Mori before running the 12-turn continuity session.

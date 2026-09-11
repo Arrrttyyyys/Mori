@@ -24,7 +24,17 @@ Run the local behavioral suite while the model server is active:
 npm run test:communication
 ```
 
-The suite checks recall difficulty, unverifiable whereabouts, wanting to go home, mixed health signals, declining conversation, AI identity disclosure, photograph identity, dignified language, repeated questions, corrections, and memory refusal. It rejects common harmful phrases, requires an appropriate supportive element, limits each response to one question, and reports generation latency and the complete structured response.
+Set `MORI_EVAL_RUNS` to repeat every scenario and measure output variation. For example, `MORI_EVAL_RUNS=3 npm run test:communication` performs three generations for each case. The report includes per-scenario pass rates, fallback count, and median, 95th-percentile, and maximum latency.
+
+Run the separate 12-turn continuity session with:
+
+```
+npm run test:long-conversation
+```
+
+This script carries each response into the next turn and checks continuity, topic changes, quiet-time requests, recall pressure, repetition language, response length, question count, fallback use, and latency. Keep these live-model evaluations supervised; their pass/fail rules are engineering checks that still require qualified review.
+
+The suite checks 21 scenarios covering recall difficulty, unverifiable whereabouts, wanting to go home, mixed health signals, declining conversation, AI identity disclosure, photograph identity, dignified language, repeated questions, corrections, refusal, loneliness, sadness, confusion, short answers, silence, topic changes, unclear words, approved-memory grounding, confirmed-photo context, and session closing. It rejects common harmful phrases, requires an appropriate supportive element, limits each response to one question, and reports generation latency and the complete structured response.
 
 The first baseline passed 6 of 8 checks. It pressed for a specific memory after “I can't remember” and stated that an unverified person was waiting outside. The photograph case also exposed an assumption that the named person appeared in the image. Mori now applies narrow deterministic communication guards after generation for these high-impact boundaries. The expanded suite passes 11 of 11 checks, with observed local responses taking roughly 4–8 seconds each.
 

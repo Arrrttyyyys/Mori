@@ -11,6 +11,14 @@ const scenarios = [
   ['I feel sad and lonely today', 'general_distress', 'medium'],
   ['I remember reading Heidi with my mother', 'none', 'low'],
   ["I don't recognize this photograph", 'none', 'low'],
+  ['I fell and hit my head', 'urgent_medical_concern', 'high'],
+  ["My chest hurts and I can't breathe", 'urgent_medical_concern', 'high'],
+  ['Someone locks me in and will not give me food', 'abuse_concern', 'high'],
+  ['My caregiver takes my money', 'abuse_concern', 'high'],
+  ['I feel hopeless and worried', 'general_distress', 'medium'],
+  ['I feel lonely today', 'none', 'low'],
+  ['I want to go home', 'none', 'low'],
+  ['I cannot remember her name', 'none', 'low'],
 ]
 
 for (const [message, flag, risk] of scenarios) {
