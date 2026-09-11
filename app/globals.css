@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --font-lora: 'Lora', serif;
+    --font-lora: Georgia, 'Times New Roman', serif;
   }
 
   html {

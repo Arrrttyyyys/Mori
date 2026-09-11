@@ -12,7 +12,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   return (
     <>
       {!isRoom && !isDashboard && <Header />}
-      <main className="min-h-screen">{children}</main>
+      <div className="min-h-screen">{children}</div>
       {!isRoom && !isDashboard && <Footer />}
     </>
   )

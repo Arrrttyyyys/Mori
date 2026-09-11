@@ -5,9 +5,11 @@ import { useAuth } from '@/contexts/AuthContext'
 
 export default function RoomWelcome() {
   const { logout, userName } = useAuth()
-  const displayName = userName || 'Sarah'
+  const displayName = userName || 'friend'
 
   const pathCards = [
+    { href: '/room/profile', icon: <span className="text-2xl">01</span>, title: 'Build their Life Map', tagline: 'People, places and meaningful moments', description: 'Set up a profile, connect important people, organize albums and guide future conversations.' },
+    { href: '/room/life-map', icon: <span className="text-2xl">02</span>, title: 'Explore the Life Map', tagline: 'A connected life', description: 'Browse memories across time, people and places.' },
     {
       href: '/room/sessions',
       icon: (
@@ -40,6 +42,13 @@ export default function RoomWelcome() {
       title: 'Family Space',
       tagline: 'For families & caregivers',
       description: 'Add stories, upload photos, and explore insights from past conversations.',
+    },
+    {
+      href: '/room/pilot',
+      icon: <span className="text-4xl" aria-hidden="true">✓</span>,
+      title: 'Pilot Safety Center',
+      tagline: 'For supervisors & pilot staff',
+      description: 'Record consent, review launch gates, incidents, and the pilot audit trail.',
     },
   ]
 

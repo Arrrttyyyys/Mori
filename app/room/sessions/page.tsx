@@ -1,15 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import TherapyInterface from '@/components/TherapyInterface'
-import { TherapySession } from '@/lib/therapy/types'
-import { useAuth } from '@/contexts/AuthContext'
+import { useLife } from '@/lib/life/use-life'
 
 export default function MemorySessions() {
-  const { userId } = useAuth()
+  const { userId, life, loading, authorizedFetch, error, setError } = useLife()
+  const [starting, setStarting] = useState(false)
   const [isWaiting, setIsWaiting] = useState(false)
-  const [activeSession, setActiveSession] = useState<TherapySession | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
 
   const handleStartSession = () => {
@@ -17,39 +16,36 @@ export default function MemorySessions() {
   }
 
   const handleReadyToBegin = async () => {
+    if (starting || loading || !userId) return
+    setStarting(true)
+    setError('')
     try {
-      // Create session for this account (user_id scopes backend data)
-      const uid = userId || 'default_user'
-      const response = await fetch(`/api/therapy/session?user_id=${encodeURIComponent(uid)}`, {
-        method: 'GET',
-      })
+      const response = await authorizedFetch(
+        `/api/therapy/session?user_id=${encodeURIComponent(userId)}`,
+      )
       const data = await response.json()
-      const session: TherapySession = data.session
-
-      setSessionId(session.session_id)
-      setActiveSession(session)
+      if (!response.ok) throw new Error(data.error || 'Could not start the session. Please try again.')
+      setSessionId(data.session.session_id)
       setIsWaiting(false)
     } catch (error) {
-      console.error('Error starting session:', error)
-      setIsWaiting(false)
+      setError((error as Error).message)
+    } finally {
+      setStarting(false)
     }
   }
 
-  const handleCloseSession = () => {
-    if (sessionId) {
-      // Close session on server
-      fetch(`/api/therapy/session?session_id=${sessionId}`, {
-        method: 'DELETE',
-      }).catch(console.error)
-    }
-    setActiveSession(null)
-    setSessionId(null)
-    setIsWaiting(false)
-  }
-
-  // If we have an active session, show the therapy interface
-  if (activeSession && sessionId) {
-    return <TherapyInterface sessionId={sessionId} onClose={handleCloseSession} />
+  if (sessionId) {
+    return (
+      <TherapyInterface
+        sessionId={sessionId}
+        language={life.profile.language}
+        audioAllowed={life.profile.audioAllowed}
+        onClose={() => {
+          setSessionId(null)
+          setIsWaiting(false)
+        }}
+      />
+    )
   }
 
   return (
@@ -108,12 +104,14 @@ export default function MemorySessions() {
               </p>
               <button
                 onClick={handleReadyToBegin}
+                disabled={loading || starting || !userId}
                 className="bg-primary text-white px-8 py-4 rounded-2xl text-xl font-medium shadow-lg hover:opacity-90 hover:scale-[1.02] transition-all duration-300"
               >
-                Ready to begin
+                {starting ? 'Getting ready…' : 'Ready to begin'}
               </button>
             </div>
           )}
+          {error && <p role="alert" className="mt-6 text-lg text-red-700">{error}</p>}
         </div>
 
       </div>

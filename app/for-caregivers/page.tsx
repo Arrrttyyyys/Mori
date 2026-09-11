@@ -7,8 +7,8 @@ export default function ForCaregivers() {
       description: 'Mori provides a respectful, dignified way to engage residents in meaningful conversations that honor their life experiences.',
     },
     {
-      title: 'Reminiscence therapy benefits',
-      description: 'Research shows that reminiscence therapy improves mood, reduces anxiety, and enhances cognitive engagement for older adults.',
+      title: 'Meaningful reminiscence',
+      description: 'Use familiar photographs and family stories to invite a comfortable conversation, at the person’s pace.',
     },
     {
       title: 'Easy to use, no training required',
@@ -29,7 +29,7 @@ export default function ForCaregivers() {
             For Caregivers
           </h1>
           <p className="text-xl md:text-2xl text-text/80 leading-relaxed">
-            Supporting residents with dignity through reminiscence therapy
+            Supporting residents with dignity through guided reminiscence
           </p>
         </div>
       </section>
@@ -38,13 +38,13 @@ export default function ForCaregivers() {
       <section className="max-w-5xl mx-auto px-6 py-20">
         <div className="space-y-12 mb-16">
           <p className="text-xl text-text/80 leading-relaxed">
-            As a caregiver, you understand the importance of treating each resident with dignity, 
-            respect, and compassion. You know that beyond medical care, emotional wellbeing and 
+            As a caregiver, you understand the importance of treating each resident with dignity,
+            respect, and compassion. You know that beyond medical care, emotional wellbeing and
             meaningful engagement are essential to quality of life.
           </p>
           <p className="text-xl text-text/80 leading-relaxed">
-            Mori supports your work by providing a gentle tool for reminiscence therapy—a 
-            evidence-based approach that helps residents reconnect with their past, share their 
+            Mori supports your work by providing a gentle tool for guided reminiscence—a
+            evidence-based approach that helps residents reconnect with their past, share their
             stories, and experience moments of joy and validation.
           </p>
         </div>

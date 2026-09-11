@@ -33,11 +33,11 @@ export default function Home() {
         </h2>
         <div className="prose prose-lg max-w-none text-center">
           <p className="text-xl text-text/80 leading-relaxed mb-6">
-            Mori is an AI-powered companion designed for reminiscence therapy, memory care, and life-story conversations. 
+            Mori is an AI-powered companion designed for guided reminiscence, family connection, and life-story conversations.
             It listens with patience, asks gentle questions, and helps preserve the stories that matter most.
           </p>
           <p className="text-xl text-text/80 leading-relaxed">
-            Unlike clinical tools or productivity apps, Mori creates a warm, dignified space where memories can unfold naturally, 
+            Unlike clinical tools or productivity apps, Mori creates a warm, dignified space where memories can unfold naturally,
             where stories are honored, and where connection happens at a human pace.
           </p>
         </div>
@@ -51,16 +51,16 @@ export default function Home() {
           </h2>
           <div className="space-y-8 text-lg text-text/80 leading-relaxed">
             <p>
-              Memories are more than neural pathways—they are the threads that weave our identity, connect generations, 
-              and give meaning to our lives. When memories fade, when stories go untold, we lose something precious: 
+              Memories are more than neural pathways—they are the threads that weave our identity, connect generations,
+              and give meaning to our lives. When memories fade, when stories go untold, we lose something precious:
               the wisdom, the laughter, the love that defines who we are.
             </p>
             <p>
-              Mori exists because every person deserves to have their story heard, preserved, and honored. 
+              Mori exists because every person deserves to have their story heard, preserved, and honored.
               We believe in the dignity of memory, the power of storytelling, and the profound impact of being truly listened to.
             </p>
             <p>
-              In a world that moves too fast, Mori offers a quiet room—a gentle companion that helps families, 
+              In a world that moves too fast, Mori offers a quiet room—a gentle companion that helps families,
               caregivers, and older adults create meaningful moments of connection, one story at a time.
             </p>
           </div>
@@ -109,7 +109,7 @@ export default function Home() {
               For Caregivers
             </h3>
             <p className="text-lg text-text/70 leading-relaxed">
-              Support residents with dignity through reminiscence therapy. Easy to use, no training required, brings joy and connection to care settings.
+              Support familiar conversations with a reminiscence companion. Families and caregivers guide which memories are comfortable to use.
             </p>
           </Link>
 
