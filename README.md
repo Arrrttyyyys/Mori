@@ -92,3 +92,7 @@ Files are stored under `memories/{userId}/{unique-filename}.jpg` (or .png, .gif,
 - Tailwind CSS
 - Google Fonts (Lora)
 - Supabase (Auth + Storage)
+
+## Supervised pilot
+
+Apply every migration in `supabase/migrations`, complete `docs/pilot/STAGING_REHEARSAL.md`, and obtain every accountable approval in `docs/pilot/LAUNCH_CHECKLIST.md` before using Mori with real participants. A passing build is not pilot authorization.
