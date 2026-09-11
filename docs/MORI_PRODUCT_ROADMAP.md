@@ -48,11 +48,11 @@ This document is the ordered plan for taking Mori from its current working proto
 
 - [ ] Review the restored call-style interface at desktop, tablet, and phone sizes.
 - [ ] Finalize Mori’s visual presence, spacing, typography, colors, and captions.
-- [ ] Decide whether participant camera controls provide real value.
-- [ ] Refine the start flow: `Start Session` → breathing moment → `Ready to begin`.
-- [ ] Refine listening, thinking, speaking, paused, offline, and model-loading states.
-- [ ] Make ending a session clear, reassuring, and reliably saved.
-- [ ] Ensure the participant never chooses a technical session mode or memory category.
+- [x] Decide whether participant camera controls provide real value.
+- [x] Refine the start flow: `Start Session` → breathing moment → `Ready to begin`.
+- [x] Refine listening, thinking, speaking, paused, offline, and model-loading states.
+- [x] Make ending a session clear, reassuring, and reliably saved.
+- [x] Ensure the participant never chooses a technical session mode or memory category.
 - [ ] Confirm every control is understandable with large text and touch targets.
 - [ ] Test keyboard navigation, screen-reader labels, contrast, and reduced motion.
 
@@ -62,6 +62,18 @@ This document is the ordered plan for taking Mori from its current working proto
 - A participant can pause, continue, change direction, and finish without confusion.
 - The layout works at the intended tablet size and has no overflow or hidden controls.
 - Every failure state offers a calm recovery path.
+
+**Progress record — September 10, 2026**
+
+- Kept the familiar call-style layout and removed the participant camera because Mori does not process or respond to the camera feed. The participant presence remains visible without creating a misleading impression that Mori can see them.
+- Reworked the start screen while preserving the two-step `Start Session` and `Ready to begin` flow.
+- Added distinct listening, thinking, voice-ready, paused, model-error, session-ending, and closed states.
+- Added retry for a failed typed or spoken message.
+- Added a `Different memory` control without exposing technical modes or categories.
+- Added an accessible end-session confirmation, safe initial focus, keyboard focus containment, Escape cancellation, save progress, and retry after a failed save.
+- Added large touch targets, visible keyboard focus, semantic live regions, and reduced-motion behavior.
+- `npm run test:pilot` and `npm run build` pass.
+- Visual desktop/tablet/phone inspection and hands-on accessibility checks remain open because no browser-control session was available during this work.
 
 ## Phase 2 — Strengthen Mori’s conversation behavior
 
