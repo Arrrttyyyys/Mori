@@ -18,17 +18,29 @@ This document is the ordered plan for taking Mori from its current working proto
 
 **Goal:** Create a recoverable checkpoint before more product work.
 
-- [ ] Review the current Git changes and separate generated/local files from product code.
-- [ ] Confirm `.env.local`, database passwords, API keys, and downloaded model files are ignored by Git.
-- [ ] Commit the completed connected-life implementation in reviewable commits.
-- [ ] Push a private backup to the chosen Git host.
-- [ ] Record the migration state and current test results.
+- [x] Review the current Git changes and separate generated/local files from product code.
+- [x] Confirm `.env.local`, database passwords, API keys, and downloaded model files are ignored by Git.
+- [x] Commit the completed connected-life implementation in reviewable commits.
+- [x] Push a private backup to the chosen Git host.
+- [x] Record the migration state and current test results.
 
 **Exit criteria**
 
 - The working version can be restored on a clean machine without copying secrets.
 - No secret or local model weight is tracked in Git.
 - All baseline tests still pass from the saved revision.
+
+**Completion record — September 10, 2026**
+
+- Private backup: `https://github.com/Arrrttyyyys/Mori`
+- `1877b57` — connected-life backend, database, verification, and local inference
+- `762067d` — participant and caregiver interface
+- `2e2f222` — implementation roadmap and pilot-readiness documentation
+- Credential-shaped-value scan passed for every file eligible to be saved.
+- `.env.local`, `.venv-mori`, `.local-models`, `node_modules`, and `.next` were verified as ignored.
+- `npm run test:pilot` passed: types, memory engine, eight safety scenarios, 14 authenticated API contracts, and life-policy checks.
+- `npm run build` passed with all 29 application routes compiled or generated.
+- Eight database migrations remain recorded as applied in the configured Supabase project.
 
 ## Phase 1 — Finish the memory-session experience
 
