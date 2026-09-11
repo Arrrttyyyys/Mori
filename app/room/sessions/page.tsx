@@ -92,7 +92,7 @@ export default function MemorySessions() {
                 <button
                   type="button"
                   onClick={handleStartSession}
-                  className="mt-8 min-h-16 rounded-2xl bg-primary px-8 py-4 text-xl font-semibold text-white shadow-lg transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
+                  className="mt-8 min-h-16 rounded-2xl bg-primary-dark px-8 py-4 text-xl font-semibold text-white shadow-lg transition-colors hover:bg-[#4c604f] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30"
                 >
                   Start Session
                 </button>
@@ -109,7 +109,7 @@ export default function MemorySessions() {
                       type="button"
                       onClick={handleReadyToBegin}
                       disabled={loading || starting || !userId}
-                      className="min-h-16 rounded-2xl bg-primary px-8 py-4 text-xl font-semibold text-white shadow-lg transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="min-h-16 rounded-2xl bg-primary-dark px-8 py-4 text-xl font-semibold text-white shadow-lg transition-colors hover:bg-[#4c604f] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {starting ? 'Getting ready…' : 'Ready to begin'}
                     </button>
@@ -143,13 +143,13 @@ export default function MemorySessions() {
                     ? `A session for ${life.profile.preferredName}`
                     : 'A session at your pace'}
                 </h3>
-                <ul className="mt-6 space-y-4 text-lg text-white/75">
+                <ul className="mt-6 space-y-4 text-lg text-white/80">
                   <li className="flex gap-3"><span aria-hidden="true">✓</span><span>No right or wrong answers</span></li>
                   <li className="flex gap-3"><span aria-hidden="true">✓</span><span>Pause or finish at any time</span></li>
                   <li className="flex gap-3"><span aria-hidden="true">✓</span><span>Mori chooses only approved memories</span></li>
                 </ul>
               </div>
-              <p className="mt-10 text-sm leading-relaxed text-white/55">
+              <p className="mt-10 text-sm leading-relaxed text-white/70">
                 A family member or caregiver can help with setup, then stay nearby if support is needed.
               </p>
             </aside>

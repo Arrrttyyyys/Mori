@@ -58,6 +58,7 @@ export default function TherapyInterface({
   });
   const mounted = useRef(true);
   const cancelEndButton = useRef<HTMLButtonElement | null>(null);
+  const finishButton = useRef<HTMLButtonElement | null>(null);
   const endDialog = useRef<HTMLElement | null>(null);
   const requestAbort = useRef<AbortController | null>(null);
   const startListening = useCallback(() => {
@@ -302,6 +303,7 @@ export default function TherapyInterface({
     pausedRef.current = false;
     setPaused(false);
     startListening();
+    window.requestAnimationFrame(() => finishButton.current?.focus());
   }, [startListening]);
   useEffect(() => {
     if (!confirmingEnd) return;
@@ -367,7 +369,7 @@ export default function TherapyInterface({
           </div>
         </header>
 
-        <div className="relative flex min-h-[420px] flex-1 items-center justify-center overflow-hidden px-5 py-8 md:min-h-[520px] md:px-10">
+        <div className="relative flex min-h-[420px] flex-1 items-center justify-center overflow-hidden px-5 py-8 md:min-h-[520px] md:px-10 min-[960px]:min-h-0">
           <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(134,158,137,0.18),transparent_62%)]" />
           {memory ? (
             <figure className="relative z-10 flex h-full w-full max-w-4xl flex-col items-center justify-center">
@@ -445,11 +447,10 @@ export default function TherapyInterface({
           <nav aria-label="Session controls" className="border-t border-white/10 bg-black/15 px-4 py-4 md:px-8">
             <div className="mx-auto flex max-w-4xl flex-wrap justify-center gap-3">
               <button
-                ref={cancelEndButton}
                 type="button"
                 aria-pressed={voice}
                 onClick={toggleVoice}
-                className={`${sessionButton} ${voice ? "bg-[#839785]" : "bg-white/5"}`}
+                className={`${sessionButton} ${voice ? "bg-[#5a6d5a]" : "bg-white/5"}`}
               >
                 {voice ? "Voice on" : "Turn voice on"}
               </button>
@@ -465,6 +466,7 @@ export default function TherapyInterface({
                 Different memory
               </button>
               <button
+                ref={finishButton}
                 type="button"
                 disabled={busy || ending}
                 onClick={() => {
@@ -553,7 +555,7 @@ export default function TherapyInterface({
                   send(message);
                 }
               }}
-              className="flex gap-2"
+              className="flex flex-col gap-2 min-[420px]:flex-row"
             >
               <label htmlFor="mori-message" className="sr-only">Your message</label>
               <input
@@ -580,6 +582,7 @@ export default function TherapyInterface({
             {error && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-red-800">{error}</p>}
             <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
+                ref={cancelEndButton}
                 type="button"
                 disabled={ending}
                 onClick={cancelFinish}

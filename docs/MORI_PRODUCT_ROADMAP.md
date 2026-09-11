@@ -1,6 +1,6 @@
 # Mori product roadmap
 
-Last updated: September 10, 2026
+Last updated: September 11, 2026
 
 This document is the ordered plan for taking Mori from its current working prototype to a supervised pilot and, later, a production service. Work through one phase at a time. Do not mark a phase complete until its exit criteria pass.
 
@@ -53,7 +53,7 @@ This document is the ordered plan for taking Mori from its current working proto
 - [x] Refine listening, thinking, speaking, paused, offline, and model-loading states.
 - [x] Make ending a session clear, reassuring, and reliably saved.
 - [x] Ensure the participant never chooses a technical session mode or memory category.
-- [ ] Confirm every control is understandable with large text and touch targets.
+- [x] Confirm every control is understandable with large text and touch targets.
 - [ ] Test keyboard navigation, screen-reader labels, contrast, and reduced motion.
 
 **Exit criteria**
@@ -72,8 +72,12 @@ This document is the ordered plan for taking Mori from its current working proto
 - Added a `Different memory` control without exposing technical modes or categories.
 - Added an accessible end-session confirmation, safe initial focus, keyboard focus containment, Escape cancellation, save progress, and retry after a failed save.
 - Added large touch targets, visible keyboard focus, semantic live regions, and reduced-motion behavior.
+- Audited participant-facing labels and control dimensions in source. Primary controls are at least 48 pixels high; message and ending controls are at least 56 pixels high; start controls are 64 pixels high.
+- Increased start-screen contrast, strengthened secondary text contrast, and changed the active voice control to a darker accessible sage.
+- Allowed the session stage to shrink on short desktop and tablet viewports so the control bar is not hidden, and stacked the message field and Send button on narrow phones.
+- Restored keyboard focus to `Finish for today` when the ending dialog is dismissed.
 - `npm run test:pilot` and `npm run build` pass.
-- Visual desktop/tablet/phone inspection and hands-on accessibility checks remain open because no browser-control session was available during this work.
+- Visual desktop/tablet/phone inspection and hands-on keyboard and screen-reader checks remain open because the in-app browser reported no available browser session on both review attempts. Static semantic, focus, contrast, touch-target, and reduced-motion checks are complete.
 
 ## Phase 2 — Strengthen Mori’s conversation behavior
 
@@ -227,4 +231,4 @@ At the start of each work session, select the first unchecked item in the curren
 
 ## Next action
 
-Start with **Phase 0 — Protect the current baseline**. The current workspace contains substantial completed work that has not yet been organized into a recoverable Git checkpoint.
+Connect an in-app browser session, then complete the two remaining Phase 1 checks: responsive visual inspection at desktop, tablet, and phone sizes, followed by hands-on keyboard and screen-reader verification.
