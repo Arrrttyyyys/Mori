@@ -3,6 +3,7 @@ import { TherapyBrain } from './therapy-brain'
 import { SafetyMonitor } from './safety-monitor'
 
 export interface ExtraSessionContext {
+  session_plan?: string
   previous_sessions_summary?: string
   memory_library?: MemoryLibraryItem[]
   family_space?: FamilySpaceContext
@@ -11,8 +12,8 @@ export interface ExtraSessionContext {
 export class SessionOrchestrator {
   private therapyBrain: TherapyBrain
   private safetyMonitor: SafetyMonitor
-  private maxTurnsBeforeClose = 6
-  private minTurnsBeforeClose = 3
+  private maxTurnsBeforeClose = 16
+  private minTurnsBeforeClose = 8
 
   constructor() {
     this.therapyBrain = new TherapyBrain()
@@ -25,6 +26,13 @@ export class SessionOrchestrator {
     photoMetadata?: PhotoMetadata,
     extraContext?: ExtraSessionContext
   ): Promise<TherapyResponse> {
+    if (this.wantsToEndSession(userMessage, Boolean(session.close_offer_turn))) {
+      const closure = this.getSessionClosureResponse()
+      this.addTurn(session, userMessage, closure, photoMetadata?.photo_id)
+      session.status = 'closed'
+      return closure
+    }
+
     // Safety check first
     const safetyCheck = this.safetyMonitor.checkSafety(userMessage)
     
@@ -33,9 +41,15 @@ export class SessionOrchestrator {
         safetyCheck.riskLevel,
         safetyCheck.flags
       )
+      safetyResponse.safety = {
+        risk_level: safetyCheck.riskLevel,
+        flags: safetyCheck.flags,
+        supervisor_attention: safetyCheck.riskLevel !== 'low',
+      }
       
       // Store the turn
       this.addTurn(session, userMessage, safetyResponse, photoMetadata?.photo_id)
+      this.updateSessionMetadata(session, safetyResponse)
       
       // Escalate if needed
       if (this.safetyMonitor.shouldEscalate(safetyCheck.riskLevel)) {
@@ -46,14 +60,14 @@ export class SessionOrchestrator {
       return safetyResponse
     }
 
-    // Check if session should close
-    if (this.shouldOfferClose(session)) {
-      return this.getCloseOfferResponse()
+    if (session.close_offer_turn) {
+      session.close_offer_turn = null
     }
 
     // Generate therapy response with full context (memory library, family space, previous sessions)
     const context = {
       session,
+      session_plan: extraContext?.session_plan,
       photo_metadata: photoMetadata,
       previous_sessions_summary: extraContext?.previous_sessions_summary,
       memory_library: extraContext?.memory_library,
@@ -67,6 +81,12 @@ export class SessionOrchestrator {
 
     // Update session metadata
     this.updateSessionMetadata(session, response)
+
+    if (this.shouldOfferClose(session, userMessage) && response.session_action !== 'close') {
+      response.spoken_response = `${response.spoken_response} I've enjoyed spending this time with you.`
+      response.next_question = 'Would you like to keep talking, or finish for today?'
+      session.close_offer_turn = session.turns.length
+    }
 
     return response
   }
@@ -100,20 +120,19 @@ export class SessionOrchestrator {
     }
   }
 
-  private shouldOfferClose(session: TherapySession): boolean {
+  private shouldOfferClose(session: TherapySession, userMessage: string): boolean {
+    if (/\b(tired|sleepy|exhausted|need (?:a )?rest)\b/i.test(userMessage)) return true
     const turnCount = session.turns.length
-    return turnCount >= this.minTurnsBeforeClose && turnCount % 3 === 0
+    const directQuestion = /\?|\b(who|what|when|where|why|how|can you|do you|are you|tell me)\b/i.test(userMessage)
+    return turnCount >= this.minTurnsBeforeClose && turnCount % 8 === 0 && !session.close_offer_turn && !directQuestion
   }
 
-  private getCloseOfferResponse(): TherapyResponse {
-    return {
-      spoken_response: "We've been talking for a while. I've really enjoyed listening to your stories.",
-      next_question: "Would you like to continue?",
-      show_photo: false,
-      photo_id: null,
-      emotional_state: 'reflective',
-      session_action: 'continue',
+  private wantsToEndSession(message: string, answeringCloseOffer: boolean): boolean {
+    if (/^(?:please )?(?:stop|enough|no more|i want to stop)[.! ]*$/i.test(message.trim())) return true
+    if (/\b(goodbye|bye|end the session|finish(?:ed)? for today|done for today|stop now|no more|that's all|that is all)\b/i.test(message)) {
+      return true
     }
+    return answeringCloseOffer && /^(no|stop|finish|done|end)(?:[.! ]|$)/i.test(message.trim())
   }
 
   getSessionClosureResponse(): TherapyResponse {
@@ -133,7 +152,7 @@ export class SessionOrchestrator {
     
     return (
       duration > maxDuration ||
-      session.turns.length > this.maxTurnsBeforeClose ||
+      session.turns.length >= this.maxTurnsBeforeClose ||
       session.status === 'closed'
     )
   }

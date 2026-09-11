@@ -1,42 +1,116 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getMemories, addMemory } from '@/lib/user-data-store'
-
+import { NextRequest, NextResponse } from "next/server";
+import { addMemory } from "@/lib/user-data-store";
+import {
+  authErrorResponse,
+  requireRequestIdentity,
+} from "@/lib/auth/server-auth";
+import { loadLifeMemories, loadLife, demoDetails } from "@/lib/life/store";
+import { parseMemory } from "@/lib/life/validation";
 export async function GET(
-  _request: NextRequest,
-  { params }: { params: { userId: string } }
+  request: NextRequest,
+  { params }: { params: { userId: string } },
 ) {
   try {
-    const userId = params.userId
-    if (!userId) {
-      return NextResponse.json({ error: 'userId required' }, { status: 400 })
-    }
-    const memories = getMemories(userId)
-    return NextResponse.json({ memories })
+    return NextResponse.json({
+      memories: await loadLifeMemories(
+        await requireRequestIdentity(request, params.userId),
+      ),
+    });
   } catch (error) {
-    console.error('Get memories error:', error)
-    return NextResponse.json({ error: 'Failed to get memories' }, { status: 500 })
+    return (
+      authErrorResponse(error) ??
+      NextResponse.json({ error: "Could not load memories" }, { status: 500 })
+    );
   }
 }
-
-export async function POST(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { userId: string } },
+) {
   try {
-    const userId = params.userId
-    if (!userId) {
-      return NextResponse.json({ error: 'userId required' }, { status: 400 })
+    const identity = await requireRequestIdentity(request, params.userId);
+    const body = await request.json();
+    let values;
+    try {
+      values = parseMemory(body);
+    } catch (error) {
+      return NextResponse.json(
+        { error: (error as Error).message },
+        { status: 400 },
+      );
     }
-    const body = await request.json()
-    const { image, title, date } = body
-    if (!title || !date) {
-      return NextResponse.json({ error: 'title and date required' }, { status: 400 })
+    if (
+      identity.mode === "supabase" &&
+      identity.workspaceRole === "contributor"
+    )
+      values.safety = "review";
+    const life = await loadLife(identity);
+    if (
+      values.context.personIds.some(
+        (id) => !life.records.some((x) => x.id === id && x.kind === "person"),
+      ) ||
+      values.context.albumIds.some(
+        (id) => !life.records.some((x) => x.id === id && x.kind === "album"),
+      )
+    )
+      return NextResponse.json(
+        { error: "Choose people and albums from this life map" },
+        { status: 400 },
+      );
+    const people = life.records
+      .filter((x) => values.context.personIds.includes(x.id))
+      .map((x) =>
+        [x.data.name, x.data.relationship].filter(Boolean).join(" — "),
+      );
+    let id: string | number;
+    if (identity.mode === "demo") {
+      const memory = addMemory(identity.userId, {
+        image: body.image ?? "",
+        title: values.title,
+        date: values.memory_date,
+      });
+      id = memory.id;
+      demoDetails().set(String(id), {
+        ...body,
+        id,
+        context: values.context,
+        safety: values.safety,
+        avoidUntil: values.avoid_until ?? undefined,
+        people,
+        year: values.context.year,
+      });
+    } else {
+      const path = body.storage_path;
+      if (
+        values.media_kind !== "story" &&
+        (typeof path !== "string" || !path.startsWith(`${identity.actorId}/`))
+      )
+        return NextResponse.json(
+          { error: "Upload a file before saving this memory" },
+          { status: 400 },
+        );
+      const { data, error } = await identity.client
+        .from("memories")
+        .insert({
+          ...values,
+          owner_id: identity.userId,
+          people,
+          storage_path: values.media_kind === "story" ? null : path,
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      id = data.id;
     }
-    const memory = addMemory(userId, {
-      image: image ?? '',
-      title: String(title).trim(),
-      date: String(date).trim(),
-    })
-    return NextResponse.json({ memory })
+    const memories = await loadLifeMemories(identity);
+    return NextResponse.json(
+      { memory: memories.find((x) => x.id === id), memories },
+      { status: 201 },
+    );
   } catch (error) {
-    console.error('Add memory error:', error)
-    return NextResponse.json({ error: 'Failed to add memory' }, { status: 500 })
+    return (
+      authErrorResponse(error) ??
+      NextResponse.json({ error: "Could not save memory" }, { status: 500 })
+    );
   }
 }

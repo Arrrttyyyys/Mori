@@ -6,7 +6,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:types": "tsc --noEmit",
+    "test:memory-engine": "tsc lib/memory-engine/index.ts lib/memory-engine/types.ts lib/memory-engine/stimulus-scoring-engine.ts lib/memory-engine/memory-safety-controller.ts lib/memory-engine/memory-bridge-engine.ts lib/memory-engine/longitudinal-memory-model.ts --module commonjs --moduleResolution node --target es2020 --esModuleInterop --skipLibCheck --outDir /tmp/mori-engine-test --noEmit false && node tests/memory-engine.cjs",
+    "test:safety": "tsc lib/therapy/safety-monitor.ts lib/therapy/types.ts --module commonjs --moduleResolution node --target es2020 --esModuleInterop --skipLibCheck --outDir /tmp/mori-safety-test --noEmit false && node tests/safety-monitor.cjs",
+    "test:security": "node tests/security-contracts.cjs",
+    "test:pilot": "npm run test:types && npm run test:memory-engine && npm run test:safety && npm run test:security && npm run test:life",
+    "test:life": "tsc -p tests/life.tsconfig.json && node tests/life-policy.cjs",
+    "test:workflow": "node tests/life-workflow.cjs",
+    "db:status": "node scripts/database.cjs status",
+    "db:migrate": "node scripts/database.cjs apply",
+    "model:start": "node scripts/local-model.cjs",
+    "test:local-provider": "tsc lib/therapy/therapy-brain.ts --module commonjs --moduleResolution node --target es2020 --esModuleInterop --skipLibCheck --outDir /tmp/mori-local-test --noEmit false && node tests/local-provider.cjs",
+    "test:communication": "tsc lib/therapy/therapy-brain.ts lib/therapy/types.ts --module commonjs --moduleResolution node --target es2020 --esModuleInterop --skipLibCheck --outDir /tmp/mori-communication-eval --noEmit false && node tests/communication-eval.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

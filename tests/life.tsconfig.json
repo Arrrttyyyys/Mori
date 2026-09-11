@@ -1,0 +1,6 @@
+{
+ "extends":"../tsconfig.json",
+ "compilerOptions":{"module":"commonjs","moduleResolution":"node","target":"es2020","noEmit":false,"outDir":"/tmp/mori-life-test","rootDir":"..","incremental":false},
+ "include":["../lib/life/types.ts","../lib/life/signals.ts","../lib/life/validation.ts"],
+ "exclude":["../node_modules"]
+}

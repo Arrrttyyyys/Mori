@@ -18,6 +18,9 @@ export class SafetyMonitor {
     'threaten',
     'afraid',
     'scared of',
+    'locks me in',
+    'takes my money',
+    'won\'t give me food',
   ]
 
   private panicKeywords = [
@@ -28,6 +31,25 @@ export class SafetyMonitor {
     'overwhelmed',
   ]
 
+  private urgentMedicalKeywords = [
+    'chest pain',
+    'trouble breathing',
+    'cannot breathe',
+    'can\'t breathe',
+    'one side is weak',
+    'face is drooping',
+    'suddenly confused',
+    'sudden confusion',
+    'hit my head',
+    'fell and hit',
+    'won\'t wake up',
+    'cannot wake',
+    'slurred speech',
+    'worst headache',
+    'bleeding badly',
+    'not responding',
+  ]
+
   checkSafety(userMessage: string): {
     isSafe: boolean
     riskLevel: 'low' | 'medium' | 'high'
@@ -35,6 +57,15 @@ export class SafetyMonitor {
   } {
     const message = userMessage.toLowerCase()
     const flags: string[] = []
+
+    const urgentMedicalFound = this.urgentMedicalKeywords.some(keyword => message.includes(keyword))
+    if (urgentMedicalFound) {
+      return {
+        isSafe: false,
+        riskLevel: 'high',
+        flags: ['urgent_medical_concern'],
+      }
+    }
 
     // Check for extreme distress
     const distressFound = this.distressKeywords.some(keyword => message.includes(keyword))
@@ -88,11 +119,39 @@ export class SafetyMonitor {
     }
   }
 
+  /** Stable, non-clinical category used by the pilot evaluation harness. */
+  classify(userMessage: string): string {
+    const result = this.checkSafety(userMessage)
+    return result.flags[0] ?? 'none'
+  }
+
   getSafetyResponse(riskLevel: string, flags: string[]): TherapyResponse {
     if (riskLevel === 'high') {
+      if (flags.includes('urgent_medical_concern')) {
+        return {
+          spoken_response: "This may need urgent help. Please get the attention of someone nearby or call your local emergency services now.",
+          next_question: "Is someone nearby who can help you?",
+          show_photo: false,
+          photo_id: null,
+          emotional_state: 'distressed',
+          session_action: 'continue',
+        }
+      }
+
+      if (flags.includes('self_harm_ideation')) {
+        return {
+          spoken_response: "I'm really sorry you're feeling this much pain. Please stay with me and get the attention of someone you trust nearby or contact local emergency services now.",
+          next_question: "Are you in immediate danger right now?",
+          show_photo: false,
+          photo_id: null,
+          emotional_state: 'distressed',
+          session_action: 'continue',
+        }
+      }
+
       return {
-        spoken_response: "I hear that you're going through something very difficult. I want you to know that you're not alone, and there are people who can help.",
-        next_question: "I'm here with you. How are you feeling?",
+        spoken_response: "That sounds frightening. Please get the attention of someone you trust nearby so they can help you feel safe.",
+        next_question: "Are you in immediate danger right now?",
         show_photo: false,
         photo_id: null,
         emotional_state: 'distressed',

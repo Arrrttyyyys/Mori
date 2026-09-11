@@ -1,7 +1,12 @@
 import { TherapySession, SessionTurn } from './types'
 
 export class SessionStore {
-  private sessions: Map<string, TherapySession> = new Map()
+  private sessions: Map<string, TherapySession>
+
+  constructor() {
+    const shared = globalThis as typeof globalThis & { __moriDemoSessions?: Map<string, TherapySession> }
+    this.sessions = shared.__moriDemoSessions ??= new Map<string, TherapySession>()
+  }
 
   createSession(userId: string): TherapySession {
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -16,6 +21,7 @@ export class SessionStore {
       started_at: new Date(),
       last_activity: new Date(),
       status: 'active',
+      close_offer_turn: null,
     }
 
     this.sessions.set(sessionId, session)

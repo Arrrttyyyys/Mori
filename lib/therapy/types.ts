@@ -5,6 +5,11 @@ export interface TherapyResponse {
   photo_id: string | null
   emotional_state: 'calm' | 'reflective' | 'nostalgic' | 'confused' | 'distressed' | 'joyful'
   session_action: 'continue' | 'close'
+  safety?: {
+    risk_level: 'low' | 'medium' | 'high'
+    flags: string[]
+    supervisor_attention: boolean
+  }
 }
 
 export interface PhotoMetadata {
@@ -32,13 +37,15 @@ export interface TherapySession {
   started_at: Date
   last_activity: Date
   status: 'active' | 'closed'
+  close_offer_turn?: number | null
 }
 
 /** Memory Library item (titles/dates only for LLM context; no image data) */
 export interface MemoryLibraryItem {
-  id: number
+  id: string | number
   title: string
   date: string
+  image?: string
 }
 
 /** Family Space context for Mori */
@@ -48,6 +55,7 @@ export interface FamilySpaceContext {
 }
 
 export interface SessionContext {
+  session_plan?: string
   session: TherapySession
   photo_metadata?: PhotoMetadata
   previous_sessions_summary?: string

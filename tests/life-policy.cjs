@@ -1,0 +1,8 @@
+const assert=require('node:assert/strict');const {inferSignals}=require('/tmp/mori-life-test/lib/life/signals.js');const {memoryAllowed}=require('/tmp/mori-life-test/lib/life/types.js');const {parseMemory}=require('/tmp/mori-life-test/lib/life/validation.js');
+for(const phrase of ["I don't remember",'I do not remember','I can’t remember','I am not sure','I do not remember my garden'])assert.equal(inferSignals(phrase).recognition,.2,phrase+' must not count as recognition');
+assert.equal(inferSignals('I remember our garden').recognition,.8);assert.equal(inferSignals('Yes').recognition,null,'yes alone is not recognition evidence');assert(inferSignals('Please stop, I am scared').distress>=.7);
+for(const safety of ['review','avoid','sensitive'])assert.equal(memoryAllowed({safety}),false);
+for(const safety of ['preferred','safe','neutral'])assert.equal(memoryAllowed({safety}),true);
+assert.equal(memoryAllowed({safety:'temporary',avoidUntil:new Date(Date.now()+60000).toISOString()}),false);assert.equal(memoryAllowed({safety:'temporary',avoidUntil:new Date(Date.now()-60000).toISOString()}),true);assert.equal(memoryAllowed({safety:'temporary',avoidUntil:'bad date'}),false);
+assert.throws(()=>parseMemory({title:'Memory',safety:'temporary'}));assert.throws(()=>parseMemory({title:'Memory',safety:'not-real'}));assert.throws(()=>parseMemory({title:''}));assert.equal(parseMemory({title:'Garden'}).safety,'review');assert.equal(parseMemory({title:'Garden',context:{certainty:'invented'}}).context.certainty,'unverified');
+console.log('Life policy checks passed: uncertainty, negation, permission defaults, hard restrictions and expiry.');
