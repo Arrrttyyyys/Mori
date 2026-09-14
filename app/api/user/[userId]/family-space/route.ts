@@ -21,22 +21,24 @@ async function loadFamilySpace(identity: Awaited<ReturnType<typeof requireReques
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params: routeParams }: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const params = await routeParams
     const identity = await requireRequestIdentity(_request, params.userId)
     const family_space = await loadFamilySpace(identity)
     return NextResponse.json({ family_space, adaptive_snapshot: (await latestDecisions(identity))[0] ?? null })
   } catch (error) {
     const authResponse = authErrorResponse(error)
     if (authResponse) return authResponse
-    console.error('Get family space error:', error)
+    console.error('Family space request failed.')
     return NextResponse.json({ error: 'Failed to get family space' }, { status: 500 })
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function PUT(request: NextRequest, { params: routeParams }: { params: Promise<{ userId: string }> }) {
   try {
+    const params = await routeParams
     const identity = await requireRequestIdentity(request, params.userId)
     const body = await request.json()
     const session_summaries = body.session_summaries ?? []
@@ -57,13 +59,14 @@ export async function PUT(request: NextRequest, { params }: { params: { userId: 
   } catch (error) {
     const authResponse = authErrorResponse(error)
     if (authResponse) return authResponse
-    console.error('Set family space error:', error)
+    console.error('Family space update failed.')
     return NextResponse.json({ error: 'Failed to set family space' }, { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function POST(request: NextRequest, { params: routeParams }: { params: Promise<{ userId: string }> }) {
   try {
+    const params = await routeParams
     const identity = await requireRequestIdentity(request, params.userId)
     const body = await request.json()
     const assessment = body.assessment
@@ -86,7 +89,7 @@ export async function POST(request: NextRequest, { params }: { params: { userId:
   } catch (error) {
     const authResponse = authErrorResponse(error)
     if (authResponse) return authResponse
-    console.error('Caregiver feedback error:', error)
+    console.error('Caregiver feedback update failed.')
     return NextResponse.json({ error: 'Failed to save feedback' }, { status: 500 })
   }
 }

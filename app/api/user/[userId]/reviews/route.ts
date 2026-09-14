@@ -5,8 +5,9 @@ import { createAdminServerClient } from '@/lib/supabase/server'
 const decisions = ['approved', 'corrected', 'rejected', 'sensitive', 'delete_requested']
 const resourceTypes = ['summary', 'reflection', 'observation', 'memory']
 
-export async function GET(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function GET(request: NextRequest, { params: routeParams }: { params: Promise<{ userId: string }> }) {
   try {
+    const params = await routeParams
     const identity = await requireRequestIdentity(request)
     await requirePatientRole(identity, params.userId)
     if (identity.mode === 'demo') return NextResponse.json({ reviews: [] })
@@ -18,8 +19,9 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function POST(request: NextRequest, { params: routeParams }: { params: Promise<{ userId: string }> }) {
   try {
+    const params = await routeParams
     const identity = await requireRequestIdentity(request)
     await requirePatientRole(identity, params.userId, ['caregiver', 'supervisor', 'clinician'])
     const body = await request.json()

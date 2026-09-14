@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     const authResponse = authErrorResponse(error)
     if (authResponse) return authResponse
-    console.error('Error fetching sessions:', error)
+    console.error('Session history request failed.')
     return NextResponse.json(
       { error: 'Failed to fetch sessions' },
       { status: 500 }

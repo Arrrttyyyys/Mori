@@ -8,8 +8,7 @@ import {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { User, Session } from "@supabase/supabase-js";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { User } from "@supabase/supabase-js";
 import { PILOT_DEMO_ACCOUNT } from "@/lib/demo-account";
 
 interface AuthContextType {
@@ -55,26 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session: Session | null) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    fetch('/api/auth/session', { credentials: 'same-origin' })
+      .then(async (response) => response.ok ? response.json() : { user: null })
+      .then(({ user }) => setUser(user ?? null))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
   const login = async (
@@ -91,22 +75,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       router.push("/room");
       return { ok: true };
     }
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) {
-      return {
-        ok: false,
-        error:
-          "Auth is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local",
-      };
-    }
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    const response = await fetch('/api/auth/login', {
+      method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, password }),
     });
-    if (error) {
-      return { ok: false, error: error.message };
-    }
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return { ok: false, error: data.error || 'Sign in failed' };
     if (data.user) {
+      setUser(data.user);
       setDemoMode(false);
       setSelectedPatient(null);
       window.localStorage.removeItem("mori_demo_mode");
@@ -122,23 +98,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
     name: string,
   ): Promise<{ ok: boolean; error?: string }> => {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) {
-      return {
-        ok: false,
-        error:
-          "Auth is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local",
-      };
-    }
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name: name.trim() } },
+    const response = await fetch('/api/auth/signup', {
+      method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, password, name }),
     });
-    if (error) {
-      return { ok: false, error: error.message };
-    }
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return { ok: false, error: data.error || 'Account creation failed' };
+    if (data.requiresEmailConfirmation) return { ok: false, error: 'Check your email to confirm your account, then sign in.' };
     if (data.user) {
+      setUser(data.user);
       setDemoMode(false);
       setSelectedPatient(null);
       window.localStorage.removeItem("mori_demo_mode");
@@ -150,8 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    const supabase = getSupabaseBrowserClient();
-    if (supabase) await supabase.auth.signOut();
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => undefined);
     setUser(null);
     setDemoMode(false);
     window.localStorage.removeItem("mori_demo_mode");
@@ -175,16 +142,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (demoMode) {
       headers.set("X-Mori-Demo-Mode", "true");
     } else {
-      const supabase = getSupabaseBrowserClient();
-      const { data } = supabase
-        ? await supabase.auth.getSession()
-        : { data: { session: null } };
-      if (!data.session?.access_token)
-        throw new Error("Authentication required");
-      headers.set("Authorization", `Bearer ${data.session.access_token}`);
       if (selectedPatient) headers.set("X-Mori-Patient-Id", selectedPatient);
     }
-    return fetch(input, { ...init, headers });
+    const response = await fetch(input, { ...init, headers, credentials: 'same-origin' });
+    if (response.status === 401) setUser(null);
+    return response;
   };
 
   const userName = demoMode

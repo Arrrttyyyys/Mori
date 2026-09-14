@@ -24,7 +24,7 @@ const memories = [
   { id: 'garden', title: 'Roses by the back door', date: '1988' },
   { id: 'music', title: 'Saturday dance songs', date: '1992' },
 ];
-const discouraged = [/do you remember/i, /you already (said|told|asked)/i, /as i (said|mentioned)/i, /try (harder )?to remember/i, /good (girl|boy)/i, /sweetie/i];
+const discouraged = [/do you remember/i, /you already (said|told|asked)/i, /as i (said|mentioned)/i, /try (harder )?to remember/i, /good (girl|boy)/i, /sweetie/i, /\b(?:1988|1992)\b/];
 const fallbackPhrases = [/something isn't working/i, /having trouble responding/i];
 
 (async () => {
@@ -33,22 +33,29 @@ const fallbackPhrases = [/something isn't working/i, /having trouble responding/
   const brain = new TherapyBrain();
   const latencies = [];
   const failures = [];
+  const priorOutputs = new Set();
   for (let index = 0; index < script.length; index++) {
     const input = script[index];
     const started = performance.now();
     const response = await brain.generateResponse(input, { session, memory_library: memories });
     const milliseconds = Math.round(performance.now() - started);
-    latencies.push(milliseconds);
+    const diagnostics = brain.getLastGenerationDiagnostics();
+    if (diagnostics.usedModel) latencies.push(milliseconds);
     const output = `${response.spoken_response} ${response.next_question}`.trim();
     const turnFailures = [];
     if (discouraged.some((pattern) => pattern.test(output))) turnFailures.push('discouraged language');
     if ((output.match(/\?/g) || []).length > 1) turnFailures.push('more than one question');
     if (output.length > 700) turnFailures.push('response too long');
-    if (fallbackPhrases.some((pattern) => pattern.test(output))) turnFailures.push('provider fallback');
+    if (diagnostics.usedFallback || fallbackPhrases.some((pattern) => pattern.test(output))) turnFailures.push('provider fallback');
     if (index === 7 && !/music|song|listen|dance/i.test(output)) turnFailures.push('did not follow topic change');
-    if (index === 10 && !/quiet|pause|time|here/i.test(output)) turnFailures.push('did not respect quiet');
+    if (index === 4 && /george sounds|gardener who|george (?:was|is)/i.test(output)) turnFailures.push('confirmed uncertain detail');
+    if (index === 10 && ((output.match(/\?/g) || []).length || !/quiet|time/i.test(output))) turnFailures.push('did not respect quiet');
+    if (index < script.length - 1 && response.session_action === 'close') turnFailures.push('closed before explicit request');
+    const normalizedOutput = output.toLowerCase();
+    if (priorOutputs.has(normalizedOutput)) turnFailures.push('repeated an earlier response verbatim');
+    priorOutputs.add(normalizedOutput);
     failures.push(...turnFailures.map((failure) => ({ turn: index + 1, failure })));
-    console.log(JSON.stringify({ turn: index + 1, input, milliseconds, pass: !turnFailures.length, failures: turnFailures, response }));
+    console.log(JSON.stringify({ turn: index + 1, input, source: diagnostics.usedModel ? 'model' : 'guard', milliseconds, pass: !turnFailures.length, failures: turnFailures, response }));
     session.turns.push({ user_message: input, therapist_response: response, timestamp: new Date() });
     session.emotional_states.push(response.emotional_state);
     session.last_activity = new Date();

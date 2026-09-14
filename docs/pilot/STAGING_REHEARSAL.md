@@ -11,6 +11,11 @@ Do not use real participant information during rehearsal. The accountable owner 
 5. Create separate fictional accounts for patient, caregiver, supervisor, clinician, administrator, and an unrelated user. Grant roles only through an administrator-run SQL/operations process.
 6. Deploy the exact commit under review and record its commit SHA, model name, prompt version, and scoring version.
 
+For a local application connected only to staging, run `npm run dev:staging`. It
+maps the dedicated staging variables to Mori's server and starts on port 3011.
+Apply migrations with `npm run db:staging:migrate`; the command refuses the normal
+database URL and requires the same exact destructive-test phrase as the privacy drill.
+
 ## Required rehearsal scenarios
 
 - Patient A cannot read or mutate Patient B memories, sessions, notes, consent, reviews, incidents, audit events, or data requests.
@@ -28,6 +33,15 @@ Do not use real participant information during rehearsal. The accountable owner 
 ## Automated baseline
 
 Run `npm ci`, `npm run test:pilot`, and `npm run build`.
+
+For the destructive privacy drill, configure the dedicated staging variables in
+`.env.local`, verify that the staging URL differs from the normal application URL,
+set `MORI_STAGING_ALLOW_DESTRUCTIVE="DELETE DISPOSABLE MORI DATA"`, and run
+`npm run test:staging-privacy`. Record the result in `STAGING_PRIVACY_EVIDENCE.md`.
+
+After restoring the provider backup into a second isolated project, set both database
+URLs and run `npm run verify:staging-restore`. Then manually verify private-storage
+hashes, RLS behavior, and signed URL access as recorded in the evidence template.
 
 Automated checks are necessary but do not constitute clinical, privacy, penetration-test, backup-restoration, or pilot-site approval.
 

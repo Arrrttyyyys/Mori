@@ -20,8 +20,9 @@ function gates(consent: PilotConsent) {
 
 const emptyConsent: PilotConsent = { patientConsent: 'not_started', representativeConsent: 'not_started', patientAssent: 'not_started', photosAllowed: false, audioAllowed: false, transcriptAllowed: false, caregiverSharingAllowed: false, researchUseAllowed: false }
 
-export async function GET(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function GET(request: NextRequest, { params: routeParams }: { params: Promise<{ userId: string }> }) {
   try {
+    const params = await routeParams
     const identity = await requireRequestIdentity(request)
     await requirePatientRole(identity, params.userId)
     if (identity.mode === 'demo') return NextResponse.json({ consent: getConsent(params.userId), incidents: listIncidents(params.userId), audit: listAudit(params.userId), readiness: readinessGates(params.userId) })
@@ -42,7 +43,8 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function PUT(request: NextRequest, { params: routeParams }: { params: Promise<{ userId: string }> }) {
+  const params = await routeParams
   try {
   const identity = await requireRequestIdentity(request)
   await requirePatientRole(identity, params.userId, ['supervisor', 'clinician', 'administrator'])
@@ -77,8 +79,9 @@ export async function PUT(request: NextRequest, { params }: { params: { userId: 
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function DELETE(request: NextRequest, { params: routeParams }: { params: Promise<{ userId: string }> }) {
   try {
+    const params = await routeParams
     const identity = await requireRequestIdentity(request)
     if (identity.mode !== 'demo') return NextResponse.json({ error: 'Reset is available only for fictional demo data' }, { status: 403 })
     await requirePatientRole(identity, params.userId)

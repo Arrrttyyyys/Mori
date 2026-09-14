@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PILOT_DEMO_ACCOUNT } from "@/lib/demo-account";
 import { createUserServerClient } from "@/lib/supabase/server";
+import { ACCESS_COOKIE } from "@/lib/auth/cookies";
 
 export type RequestIdentity =
   | {
@@ -32,6 +33,11 @@ export async function requireRequestIdentity(
   request: NextRequest,
   requestedUserId?: string,
 ): Promise<RequestIdentity> {
+  if (!["GET", "HEAD", "OPTIONS"].includes(request.method) && !request.headers.has("authorization")) {
+    const origin = request.headers.get("origin");
+    if (!origin || origin !== request.nextUrl.origin)
+      throw new AuthError(403, "Request origin could not be verified");
+  }
   if (request.headers.get("x-mori-demo-mode") === "true") {
     if (requestedUserId && requestedUserId !== PILOT_DEMO_ACCOUNT.userId) {
       throw new AuthError(
@@ -48,11 +54,12 @@ export async function requireRequestIdentity(
 
   const authorization = request.headers.get("authorization");
   const match = authorization?.match(/^Bearer\s+(.+)$/i);
-  if (!match) throw new AuthError(401, "Authentication required");
+  const accessToken = match?.[1] || request.cookies.get(ACCESS_COOKIE)?.value;
+  if (!accessToken) throw new AuthError(401, "Authentication required");
 
   let client: SupabaseClient;
   try {
-    client = createUserServerClient(match[1]);
+    client = createUserServerClient(accessToken);
   } catch {
     throw new AuthError(503, "Authentication service is not configured");
   }

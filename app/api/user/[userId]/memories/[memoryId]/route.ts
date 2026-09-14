@@ -10,9 +10,10 @@ import {
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { userId: string; memoryId: string } },
+  { params: routeParams }: { params: Promise<{ userId: string; memoryId: string }> },
 ) {
   try {
+    const params = await routeParams;
     const identity = await requireRequestIdentity(_request, params.userId);
     if (identity.mode === "demo") {
       const memoryId = parseInt(params.memoryId, 10);
@@ -53,7 +54,7 @@ export async function DELETE(
   } catch (error) {
     const authResponse = authErrorResponse(error);
     if (authResponse) return authResponse;
-    console.error("Delete memory error:", error);
+    console.error("Memory deletion failed.");
     return NextResponse.json(
       { error: "Failed to delete memory" },
       { status: 500 },
@@ -63,9 +64,10 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { userId: string; memoryId: string } },
+  { params: routeParams }: { params: Promise<{ userId: string; memoryId: string }> },
 ) {
   try {
+    const params = await routeParams;
     const identity = await requireRequestIdentity(request, params.userId);
     const memories = await loadLifeMemories(identity);
     const current = memories.find((m) => String(m.id) === params.memoryId);

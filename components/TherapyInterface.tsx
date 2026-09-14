@@ -30,6 +30,8 @@ export default function TherapyInterface({
   const [paused, setPaused] = useState(false);
   const [closed, setClosed] = useState(false);
   const [voice, setVoice] = useState(false);
+  const [moriSpeaking, setMoriSpeaking] = useState(false);
+  const [mediaPlaying, setMediaPlaying] = useState(false);
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
   const [failedText, setFailedText] = useState("");
@@ -48,6 +50,8 @@ export default function TherapyInterface({
   const active = useRef(true);
   const processing = useRef(false);
   const speaking = useRef(false);
+  const mediaPlayingRef = useRef(false);
+  const pausedBeforeMedia = useRef(false);
   const voiceRef = useRef(false);
   const pausedRef = useRef(false);
   const sendRef = useRef<(text: string) => Promise<void>>(async () => {});
@@ -67,6 +71,7 @@ export default function TherapyInterface({
       voiceRef.current &&
       !pausedRef.current &&
       !speaking.current &&
+      !mediaPlayingRef.current &&
       !processing.current &&
       recognition.current
     ) {
@@ -80,6 +85,7 @@ export default function TherapyInterface({
     recognition.current?.abort();
     window.speechSynthesis?.cancel();
     speaking.current = false;
+    setMoriSpeaking(false);
     setListening(false);
   };
   const speak = (text: string) => {
@@ -89,6 +95,7 @@ export default function TherapyInterface({
     }
     recognition.current?.abort();
     speaking.current = true;
+    setMoriSpeaking(true);
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = language;
@@ -100,6 +107,7 @@ export default function TherapyInterface({
       null;
     utterance.onend = utterance.onerror = () => {
       speaking.current = false;
+      setMoriSpeaking(false);
       if (mounted.current) restart.current = setTimeout(startListening, 500);
     };
     window.speechSynthesis.speak(utterance);
@@ -222,6 +230,7 @@ export default function TherapyInterface({
         sendRef.current(text);
       };
       r.onerror = (event: any) => {
+        if (["aborted", "no-speech"].includes(event.error)) return;
         if (
           ["not-allowed", "service-not-allowed", "audio-capture"].includes(
             event.error,
@@ -230,6 +239,12 @@ export default function TherapyInterface({
           voiceRef.current = false;
           setVoice(false);
           setError("Microphone access is unavailable. You can type below.");
+        } else if (event.error === "network") {
+          voiceRef.current = false;
+          setVoice(false);
+          setError("Voice was interrupted. Turn voice on to try again, or type below.");
+        } else {
+          setError("Voice did not catch that. You can try again or type below.");
         }
       };
     }
@@ -267,6 +282,27 @@ export default function TherapyInterface({
     setPaused(pausedRef.current);
     if (pausedRef.current) stopAudio();
     else startListening();
+  };
+  const stopMoriSpeaking = () => {
+    window.speechSynthesis?.cancel();
+    speaking.current = false;
+    setMoriSpeaking(false);
+    restart.current = setTimeout(startListening, 300);
+  };
+  const handleMediaPlay = () => {
+    pausedBeforeMedia.current = pausedRef.current;
+    mediaPlayingRef.current = true;
+    setMediaPlaying(true);
+    recognition.current?.abort();
+    window.speechSynthesis?.cancel();
+    speaking.current = false;
+    setMoriSpeaking(false);
+    setListening(false);
+  };
+  const handleMediaStop = () => {
+    mediaPlayingRef.current = false;
+    setMediaPlaying(false);
+    if (!pausedBeforeMedia.current) startListening();
   };
   const finish = async () => {
     pausedRef.current = true;
@@ -337,6 +373,10 @@ export default function TherapyInterface({
       ? "Taking a pause"
       : busy
         ? "Mori is thinking"
+        : mediaPlaying
+          ? "Memory playing"
+        : moriSpeaking
+          ? "Mori is speaking"
         : listening
           ? "Mori is listening"
           : voice
@@ -381,11 +421,9 @@ export default function TherapyInterface({
                       controls
                       src={memory.image}
                       className="max-h-[62dvh] w-full object-contain"
-                      onPlay={() => {
-                        pausedRef.current = true;
-                        setPaused(true);
-                        stopAudio();
-                      }}
+                      onPlay={handleMediaPlay}
+                      onPause={handleMediaStop}
+                      onEnded={handleMediaStop}
                     />
                   ) : memory.mediaKind === "audio" ? (
                     <div className="w-full max-w-xl p-8 text-center">
@@ -395,11 +433,9 @@ export default function TherapyInterface({
                         controls
                         src={memory.image}
                         className="w-full"
-                        onPlay={() => {
-                          pausedRef.current = true;
-                          setPaused(true);
-                          stopAudio();
-                        }}
+                        onPlay={handleMediaPlay}
+                        onPause={handleMediaStop}
+                        onEnded={handleMediaStop}
                       />
                     </div>
                   ) : (
@@ -457,6 +493,11 @@ export default function TherapyInterface({
               <button type="button" aria-pressed={paused} onClick={togglePause} className={`${sessionButton} bg-white/5`}>
                 {paused ? "Continue" : "Pause"}
               </button>
+              {moriSpeaking && (
+                <button type="button" onClick={stopMoriSpeaking} className={`${sessionButton} bg-white/5`}>
+                  Stop Mori speaking
+                </button>
+              )}
               <button
                 type="button"
                 disabled={busy || paused}

@@ -8,9 +8,10 @@ import { loadLifeMemories, loadLife, demoDetails } from "@/lib/life/store";
 import { parseMemory } from "@/lib/life/validation";
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } },
+  { params: routeParams }: { params: Promise<{ userId: string }> },
 ) {
   try {
+    const params = await routeParams;
     return NextResponse.json({
       memories: await loadLifeMemories(
         await requireRequestIdentity(request, params.userId),
@@ -25,9 +26,10 @@ export async function GET(
 }
 export async function POST(
   request: NextRequest,
-  { params }: { params: { userId: string } },
+  { params: routeParams }: { params: Promise<{ userId: string }> },
 ) {
   try {
+    const params = await routeParams;
     const identity = await requireRequestIdentity(request, params.userId);
     const body = await request.json();
     let values;

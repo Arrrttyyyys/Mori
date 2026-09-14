@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     const authResponse = authErrorResponse(error);
     if (authResponse) return authResponse;
-    console.error("Session creation error:", error);
+    console.error("Session creation failed.");
     return NextResponse.json(
       { error: "Failed to create session" },
       { status: 500 },
@@ -404,7 +404,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const authResponse = authErrorResponse(error);
     if (authResponse) return authResponse;
-    console.error("❌ Turn processing error:", error);
+    console.error("Turn processing failed.");
     return NextResponse.json(
       { error: "Failed to process turn" },
       { status: 500 },
@@ -469,7 +469,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error) {
     const authResponse = authErrorResponse(error);
     if (authResponse) return authResponse;
-    console.error("Session closure error:", error);
+    console.error("Session closure failed.");
     return NextResponse.json(
       { error: "Failed to close session" },
       { status: 500 },

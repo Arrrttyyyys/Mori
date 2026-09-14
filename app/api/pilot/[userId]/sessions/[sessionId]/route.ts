@@ -11,8 +11,9 @@ function actionControl(action?: string) {
   return 'active'
 }
 
-export async function GET(request: NextRequest, { params }: { params: { userId: string; sessionId: string } }) {
+export async function GET(request: NextRequest, { params: routeParams }: { params: Promise<{ userId: string; sessionId: string }> }) {
   try {
+    const params = await routeParams
     const identity = await requireRequestIdentity(request)
     await requirePatientRole(identity, params.userId)
     if (identity.mode === 'demo') return NextResponse.json({ control: getControl(params.userId, params.sessionId) })
@@ -25,7 +26,8 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { userId: string; sessionId: string } }) {
+export async function POST(request: NextRequest, { params: routeParams }: { params: Promise<{ userId: string; sessionId: string }> }) {
+  const params = await routeParams
   try {
   const identity = await requireRequestIdentity(request)
   await requirePatientRole(identity, params.userId, ['supervisor', 'clinician', 'administrator'])

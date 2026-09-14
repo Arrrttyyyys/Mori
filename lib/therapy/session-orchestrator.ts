@@ -54,7 +54,7 @@ export class SessionOrchestrator {
       // Escalate if needed
       if (this.safetyMonitor.shouldEscalate(safetyCheck.riskLevel)) {
         // In production, trigger escalation hook
-        console.warn('SAFETY ESCALATION NEEDED:', safetyCheck.flags)
+        console.warn('Mori safety monitor requested supervisor attention.')
       }
       
       return safetyResponse

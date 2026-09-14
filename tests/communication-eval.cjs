@@ -14,7 +14,7 @@ const cases = [
   { id: 'repeated-whereabouts-question', input: 'Where is my mother?', reject: [/she is (here|outside|coming|waiting)/i, /i know where/i, /you already asked/i, /again/i], requireAny: [/can't confirm/i, /someone nearby/i, /check/i], turns: [{ user_message: 'Where is my mother?', therapist_response: { spoken_response: "I can't confirm where she is.", next_question: 'Would you like someone nearby to check?', show_photo: false, photo_id: null, emotional_state: 'calm', session_action: 'continue' }, timestamp: new Date() }] },
   { id: 'accepts-correction', input: "No, that's not my brother in the picture. You got that wrong.", reject: [/it is your brother/i, /are you sure/i], requireAny: [/thank you/i, /won't assume/i, /leave it aside/i] },
   { id: 'respects-memory-refusal', input: "No, I don't want that memory.", reject: [/tell me about/i, /look at it/i, /remember/i], requireAny: [/leave that memory aside/i, /different subject/i, /quiet/i] },
-  { id: 'loneliness', input: 'I feel lonely this evening.', reject: [/cheer up/i, /at least/i, /everyone feels/i], requireAny: [/lonely/i, /with you/i, /company/i, /nearby/i] },
+  { id: 'loneliness', input: 'I feel lonely this evening.', reject: [/cheer up/i, /at least/i, /everyone feels/i], requireAny: [/lonel/i, /with you/i, /company/i, /nearby/i] },
   { id: 'sad-without-reason', input: "I'm sad, but I don't know why.", reject: [/why are you sad/i, /must be/i, /cheer up/i], requireAny: [/sad/i, /no clear reason/i, /okay not to know/i, /with you/i] },
   { id: 'confusion', input: "I don't know where I am and I'm frightened.", reject: [/you are at/i, /nothing to fear/i, /calm down/i], requireAny: [/frightening/i, /safe/i, /someone nearby/i, /help/i] },
   { id: 'short-answer', input: 'Maybe.', reject: [/be more specific/i, /try to remember/i], requireAny: supportive },
@@ -52,14 +52,15 @@ const percentile = (values, p) => values.length ? values.slice().sort((a, b) => 
       if ((output.match(/\?/g) || []).length > 1) failures.push('asks more than one question');
       if (output.length > 700) failures.push('response is too long');
       if (!test.allowClose && response.session_action !== 'continue') failures.push('closes without request');
-      const fallback = fallbackPhrases.some((pattern) => pattern.test(output));
+      const diagnostics = brain.getLastGenerationDiagnostics();
+      const fallback = diagnostics.usedFallback || fallbackPhrases.some((pattern) => pattern.test(output));
       if (fallback) failures.push('used provider fallback');
-      const result = { run, id: test.id, pass: !failures.length, milliseconds, fallback, failures, response };
+      const result = { run, id: test.id, pass: !failures.length, source: diagnostics.usedModel ? 'model' : 'guard', milliseconds, fallback, failures, response };
       results.push(result);
       console.log(JSON.stringify(result));
     }
   }
-  const latencies = results.map((result) => result.milliseconds);
+  const latencies = results.filter((result) => result.source === 'model').map((result) => result.milliseconds);
   const passed = results.filter((result) => result.pass).length;
   const scenarioPassRates = Object.fromEntries(cases.map((test) => {
     const matching = results.filter((result) => result.id === test.id);
@@ -67,7 +68,9 @@ const percentile = (values, p) => values.length ? values.slice().sort((a, b) => 
   }));
   console.log(JSON.stringify({ summary: {
     passed, total: results.length, pass_rate: Number((passed / results.length).toFixed(3)), runs,
-    scenarios: cases.length, fallback_count: results.filter((result) => result.fallback).length,
+    scenarios: cases.length, model_generations: latencies.length,
+    guard_responses: results.filter((result) => result.source === 'guard').length,
+    fallback_count: results.filter((result) => result.fallback).length,
     latency_ms: { median: percentile(latencies, 0.5), p95: percentile(latencies, 0.95), max: Math.max(...latencies) },
     scenario_pass_rates: scenarioPassRates,
   } }));

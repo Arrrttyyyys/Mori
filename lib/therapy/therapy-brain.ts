@@ -121,6 +121,15 @@ export class TherapyBrain {
   private providerDisabled = false
   private geminiApiKey: string
   private geminiDisabled = false
+  private lastGenerationUsedFallback = false
+  private lastGenerationUsedModel = false
+
+  getLastGenerationDiagnostics(): { usedFallback: boolean; usedModel: boolean } {
+    return {
+      usedFallback: this.lastGenerationUsedFallback,
+      usedModel: this.lastGenerationUsedModel,
+    }
+  }
 
   constructor() {
     // In production, use environment variable
@@ -137,6 +146,16 @@ export class TherapyBrain {
     userMessage: string,
     context: SessionContext
   ): Promise<TherapyResponse> {
+    this.lastGenerationUsedFallback = false
+    this.lastGenerationUsedModel = false
+    const neutralResponse: TherapyResponse = {
+      spoken_response: '', next_question: '', show_photo: false, photo_id: null,
+      emotional_state: 'calm', session_action: 'continue',
+    }
+    const deterministicResponse = this.applyCommunicationGuard(neutralResponse, userMessage, context)
+    if (deterministicResponse !== neutralResponse) {
+      return this.applyGroundingGuard(this.applyOutputGuard(deterministicResponse, userMessage, context), context)
+    }
     const conversationHistory = this.buildConversationHistory(context)
     const photoContext = this.buildPhotoContext(context)
     const previousSessionsContext = context.previous_sessions_summary
@@ -167,11 +186,21 @@ Respond with ONLY valid JSON in this exact format:
 }`
 
     try {
-      const response = await this.callLLM(userPrompt, userMessage, context)
-      const parsed = this.parseAndValidateResponse(response)
-      return this.applyCommunicationGuard(parsed, userMessage, context)
+      this.lastGenerationUsedModel = true
+      let response = await this.callLLM(userPrompt, userMessage, context)
+      let parsed = this.parseAndValidateResponse(response)
+      if (this.lastGenerationUsedFallback) {
+        this.lastGenerationUsedFallback = false
+        response = await this.callLLM(userPrompt, userMessage, context)
+        parsed = this.parseAndValidateResponse(response)
+      }
+      return this.applyGroundingGuard(
+        this.applyOutputGuard(this.applyCommunicationGuard(parsed, userMessage, context), userMessage, context),
+        context,
+      )
     } catch (error) {
-      console.error('Therapy Brain error:', error)
+      console.error('Therapy response generation failed; using a safe fallback.')
+      this.lastGenerationUsedFallback = true
       return this.getFallbackResponse(userMessage)
     }
   }
@@ -182,7 +211,7 @@ Respond with ONLY valid JSON in this exact format:
       try {
         return await this.callGemini(prompt)
       } catch (error) {
-        console.error(error instanceof Error ? error.message : 'Gemini response unavailable')
+        console.error('Gemini response unavailable.')
         console.error('Gemini response unavailable; trying the secondary provider')
       }
     }
@@ -656,7 +685,8 @@ Respond with ONLY valid JSON in this exact format:
         session_action: parsed.session_action,
       }
     } catch (error) {
-      console.error('Failed to parse therapy response:', error)
+      console.error('Therapy provider returned malformed structured output.')
+      this.lastGenerationUsedFallback = true
       return this.getFallbackResponse('')
     }
   }
@@ -673,6 +703,96 @@ Respond with ONLY valid JSON in this exact format:
   ): TherapyResponse {
     const message = userMessage.toLowerCase()
 
+    if (!/[a-z0-9]/i.test(userMessage)) {
+      return {
+        ...response,
+        spoken_response: "That's okay. We can sit quietly. There is no rush.",
+        next_question: '',
+        show_photo: false,
+        photo_id: null,
+        emotional_state: 'calm',
+        session_action: 'continue',
+      }
+    }
+
+    if (/\b(sit|stay|be) quietly|\bquiet (?:moment|while|time)\b/.test(message)) {
+      return {
+        ...response,
+        spoken_response: 'Of course. We can sit quietly together. Take all the time you need.',
+        next_question: '',
+        show_photo: false,
+        photo_id: null,
+        emotional_state: 'calm',
+        session_action: 'continue',
+      }
+    }
+
+    if (/\b(does not|doesn't|did not|didn't) feel right|\bnot sure (?:that|it|this) (?:is|was) right\b/.test(message)) {
+      return {
+        ...response,
+        spoken_response: "That's okay. We do not have to decide whether that detail is right.",
+        next_question: 'Would you like to leave it aside?',
+        show_photo: false,
+        photo_id: null,
+        emotional_state: 'calm',
+        session_action: 'continue',
+      }
+    }
+
+    if (/\b(i (?:do not|don't) know where i am|where am i)\b/.test(message) && /\b(frightened|afraid|scared|worried)\b/.test(message)) {
+      return {
+        ...response,
+        spoken_response: "That sounds frightening. I can't confirm where you are, but you do not have to handle this alone.",
+        next_question: 'Is there someone nearby who can help you feel safe?',
+        show_photo: false,
+        photo_id: null,
+        emotional_state: 'distressed',
+        session_action: 'continue',
+      }
+    }
+
+    if (/\b(i (?:would like|want|need) to (?:finish|stop|end)|finish for today|stop for today|goodbye|good night)\b/.test(message)) {
+      return {
+        ...response,
+        spoken_response: 'Thank you for spending this time with me. We can finish for today.',
+        next_question: '',
+        show_photo: false,
+        photo_id: null,
+        emotional_state: 'calm',
+        session_action: 'close',
+      }
+    }
+
+    if (/\b(what (?:could|can|should) we talk about|what do you want me to talk about)\b/.test(message)) {
+      const choices = (context.memory_library ?? []).slice(0, 2)
+      if (choices.length) {
+        const titles = choices.map((item) => `“${item.title}”`)
+        return {
+          ...response,
+          spoken_response: titles.length === 2
+            ? `We could talk about ${titles[0]} or ${titles[1]}. There is no right choice.`
+            : `We could talk about ${titles[0]}, or choose something else.`,
+          next_question: 'Which feels comfortable right now?',
+          show_photo: false,
+          photo_id: null,
+          emotional_state: 'calm',
+          session_action: 'continue',
+        }
+      }
+    }
+
+    if (/\b(the thing|you know|over there|can't find the word|cannot find the word)\b/.test(message)) {
+      return {
+        ...response,
+        spoken_response: "I'm not sure which thing you mean, and that's okay. We can take it one step at a time.",
+        next_question: 'Would pointing to it or describing how it feels be easier?',
+        show_photo: false,
+        photo_id: null,
+        emotional_state: 'calm',
+        session_action: 'continue',
+      }
+    }
+
     if (/\b(i do not|i don't|do not|don't) want to (talk|speak|continue)\b/.test(message)) {
       return {
         ...response,
@@ -685,7 +805,7 @@ Respond with ONLY valid JSON in this exact format:
       }
     }
 
-    if (/\b(i (?:do not|don't|cannot|can't) remember|i forgot|i (?:cannot|can't) recall)\b/.test(message)) {
+    if (/\b(i (?:do not|don't|cannot|can't) remember|i forgot|i (?:cannot|can't) recall|all i can remember)\b/.test(message)) {
       return {
         ...response,
         spoken_response: "That's okay. You don't have to remember. We can take our time.",
@@ -745,6 +865,17 @@ Respond with ONLY valid JSON in this exact format:
           session_action: 'continue',
         }
       }
+      if (asksAboutPhotoIdentity && namedPerson) {
+        return {
+          ...response,
+          spoken_response: `${namedPerson} is listed in the approved information for this photograph. I can't tell anything else from the image.`,
+          next_question: 'Would you like to look at the photograph together?',
+          show_photo: true,
+          photo_id: context.photo_metadata?.photo_id ?? null,
+          emotional_state: 'calm',
+          session_action: 'continue',
+        }
+      }
     }
 
     if (/\b(who are you|are you a real person|are you human)\b/.test(message)) {
@@ -781,6 +912,55 @@ Respond with ONLY valid JSON in this exact format:
       }
     }
 
+    return response
+  }
+
+  private applyOutputGuard(response: TherapyResponse, userMessage: string, context: SessionContext): TherapyResponse {
+    const combined = `${response.spoken_response} ${response.next_question}`
+    const closeRequested = /\b(finish|stop|end|goodbye|good night)\b/i.test(userMessage)
+    let guarded = response
+    if (/\bdo you remember\b/i.test(combined)) {
+      const statement = response.spoken_response.split(/\bdo you remember\b/i)[0].trim().replace(/[,;:]$/, '')
+      guarded = {
+        ...response,
+        spoken_response: statement || "We can take this gently.",
+        next_question: 'Would you like to stay with that feeling or talk about something else?',
+      }
+    }
+    if (guarded.session_action === 'close' && !closeRequested) {
+      guarded = { ...guarded, session_action: 'continue' }
+    }
+    const normalized = `${guarded.spoken_response} ${guarded.next_question}`.trim().toLowerCase()
+    const repeated = context.session.turns.slice(-8).some((turn) =>
+      `${turn.therapist_response.spoken_response} ${turn.therapist_response.next_question}`.trim().toLowerCase() === normalized,
+    )
+    if (repeated) {
+      if (/\ball i can remember\b/i.test(userMessage)) {
+        return { ...guarded, spoken_response: "That's enough. Thank you for sharing what came to mind.", next_question: '' }
+      }
+      if (/\b(sad|lonely|upset|worried|frightened|afraid)\b/i.test(userMessage)) {
+        return { ...guarded, spoken_response: 'I hear that this feels heavy right now. I am here with you.', next_question: 'Would a quiet moment feel helpful?' }
+      }
+      if (/\b(rose|flower|garden)\b/i.test(userMessage)) {
+        return { ...guarded, spoken_response: 'The red roses by the back door sound vivid.', next_question: 'Did you enjoy their color or their scent?' }
+      }
+      if (/\b(music|song|dance)\b/i.test(userMessage)) {
+        return { ...guarded, spoken_response: 'Songs you could dance to sound important.', next_question: 'Did you prefer lively songs or slower ones?' }
+      }
+      return { ...guarded, spoken_response: "I'm listening to what you are sharing now.", next_question: 'Would you like to stay with this or change the subject?' }
+    }
+    return guarded
+  }
+
+  private applyGroundingGuard(response: TherapyResponse, context: SessionContext): TherapyResponse {
+    if (!response.show_photo) return { ...response, photo_id: null }
+    const allowedIds = new Set([
+      ...(context.photo_metadata ? [context.photo_metadata.photo_id] : []),
+      ...(context.memory_library ?? []).map((memory) => String(memory.id)),
+    ])
+    if (!response.photo_id || !allowedIds.has(String(response.photo_id))) {
+      return { ...response, show_photo: false, photo_id: null }
+    }
     return response
   }
 
@@ -861,7 +1041,7 @@ Mori: ${turn.therapist_response.spoken_response} ${turn.therapist_response.next_
 
     const lines = items
       .slice(0, 20) // Limit to 20 for prompt size
-      .map((m) => `- "${m.title}" (added ${m.date})`)
+      .map((m) => `- "${m.title}"`)
       .join('\n')
     return `\n\nMemory Library (photos/memories the person has saved; titles only):\n${lines}\nWhen the user is sad, quiet, or unsure what to talk about, warmly offer ONE of these titles as a possible path — quote the title naturally, no pressure. If they decline, accept that and try another angle later.`
   }

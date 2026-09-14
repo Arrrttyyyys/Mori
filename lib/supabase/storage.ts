@@ -1,5 +1,3 @@
-import { getSupabaseBrowserClient } from '@/lib/supabase/client'
-
 export const MEMORIES_BUCKET = 'memories'
 
 /**
@@ -10,32 +8,12 @@ export async function uploadMemoryPhoto(
   userId: string,
   file: File
 ): Promise<{ url: string; path: string } | null> {
-  const supabase = getSupabaseBrowserClient()
-  if (!supabase) return null
-
   if (file.size > 50 * 1024 * 1024 || !/^(image\/(jpeg|png|gif|webp)|audio\/(mpeg|wav|mp4)|video\/(mp4|webm))$/.test(file.type)) return null
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-  const safeExt = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp3', 'wav', 'm4a', 'mp4', 'webm'].includes(ext) ? ext : 'jpg'
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const path = `${user.id}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${safeExt}`
-
-  const { error } = await supabase.storage.from(MEMORIES_BUCKET).upload(path, file, {
-    contentType: file.type || `image/${safeExt}`,
-    upsert: false,
-  })
-
-  if (error) {
-    console.error('Supabase storage upload error:', error)
-    return null
-  }
-
-  const { data, error: signedUrlError } = await supabase.storage.from(MEMORIES_BUCKET).createSignedUrl(path, 3600)
-  if (signedUrlError) {
-    await supabase.storage.from(MEMORIES_BUCKET).remove([path])
-    return null
-  }
-  return { url: data.signedUrl, path }
+  const form = new FormData()
+  form.set('file', file)
+  const response = await fetch('/api/storage/memories', { method: 'POST', body: form, credentials: 'same-origin' })
+  if (!response.ok) return null
+  return response.json()
 }
 
 /**
@@ -43,13 +21,11 @@ export async function uploadMemoryPhoto(
  * Use when removing a memory so the file is removed from Storage too.
  */
 export async function deleteMemoryPhotoByPath(path: string): Promise<boolean> {
-  const supabase = getSupabaseBrowserClient()
-  if (!supabase) return false
-
-  const { error } = await supabase.storage.from(MEMORIES_BUCKET).remove([path])
-  if (error) {
-    console.error('Supabase storage delete error:', error)
-    return false
-  }
-  return true
+  const response = await fetch('/api/storage/memories', {
+    method: 'DELETE',
+    credentials: 'same-origin',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ path }),
+  })
+  return response.ok
 }

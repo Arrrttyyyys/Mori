@@ -19,6 +19,11 @@ run it once. Do not run it with a client-side API key.
 The `memories` Storage bucket is private. Application code must use authenticated
 downloads or short-lived signed URLs rather than permanent public URLs.
 
+The privacy retention migration adds a service-role-only purge function and makes
+staff actor references compatible with account deletion. Review the retention
+schedule in `docs/PRIVACY_SECURITY_OPERATIONS.md` and rehearse it in a disposable
+staging project before applying it to participant data.
+
 ## Environment variables
 
 The browser continues to use:

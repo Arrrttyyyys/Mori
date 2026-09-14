@@ -121,6 +121,23 @@ export async function POST(request: NextRequest) {
       if (error) throw error;
       return NextResponse.json({ ok: true });
     }
+    if (body.action === "withdraw-sharing") {
+      const [memberships, invitations, consent] = await Promise.all([
+        admin.from("family_memberships").update({ active: false }).eq("owner_id", identity.actorId),
+        admin.from("family_invitations").delete().eq("owner_id", identity.actorId),
+        admin.from("pilot_consents").upsert({ patient_id: identity.actorId, caregiver_sharing_allowed: false }, { onConflict: "patient_id" }),
+      ]);
+      const failure = memberships.error || invitations.error || consent.error;
+      if (failure) throw failure;
+      await admin.from("audit_events").insert({
+        patient_id: identity.actorId,
+        actor_id: identity.actorId,
+        action: "sharing.withdrawn",
+        resource_type: "family_workspace",
+        metadata: {},
+      });
+      return NextResponse.json({ ok: true, sharing: false });
+    }
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (error) {
     return (

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import LifeShell, { buttonClass, fieldClass } from "@/components/LifeShell";
 import { useAuth } from "@/contexts/AuthContext";
 export default function Settings() {
-  const { authorizedFetch, userId, selectPatient } = useAuth();
+  const { authorizedFetch, userId, selectPatient, logout } = useAuth();
   const [family, setFamily] = useState<any>({ workspaces: [], members: [] });
   const [role, setRole] = useState("contributor");
   const [invite, setInvite] = useState("");
@@ -11,6 +11,7 @@ export default function Settings() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const load = async () => {
     try {
       const r = await authorizedFetch("/api/family");
@@ -94,6 +95,24 @@ export default function Settings() {
     } catch (e) {
       setError((e as Error).message);
     } finally {
+      setBusy(false);
+    }
+  };
+  const deleteAccount = async () => {
+    if (deleteConfirmation !== "DELETE MY MORI ACCOUNT" || !userId) return;
+    setBusy(true);
+    setError("");
+    try {
+      const r = await authorizedFetch(`/api/user/${userId}/data-requests`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation: deleteConfirmation }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw Error(d.error);
+      await logout();
+    } catch (e) {
+      setError((e as Error).message);
       setBusy(false);
     }
   };
@@ -207,6 +226,17 @@ export default function Settings() {
               </button>
             </div>
           ))}
+          <button
+            type="button"
+            disabled={busy || family.members.length === 0}
+            className="mt-6 min-h-12 rounded-xl border border-red-300 px-5 py-3 font-semibold text-red-800 disabled:opacity-50"
+            onClick={() => {
+              if (confirm("Withdraw all family sharing now? Everyone will immediately lose access and pending invitations will be cancelled."))
+                action({ action: "withdraw-sharing" });
+            }}
+          >
+            Withdraw all family sharing
+          </button>
         </section>
       </div>
       <section className="mt-10 border-t border-primary/20 pt-6">
@@ -249,6 +279,14 @@ export default function Settings() {
             Submit request
           </button>
         </div>
+      </section>
+      <section className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-6">
+        <h2 className="text-2xl text-red-900">Delete your Mori account</h2>
+        <p className="my-3 text-red-900/80">This permanently removes your private media, profile, memories, sessions, family access, and login. Download your archive first if you want a copy.</p>
+        <label className="block text-red-900">Type <strong>DELETE MY MORI ACCOUNT</strong> to confirm
+          <input className={`${fieldClass} mt-2`} value={deleteConfirmation} onChange={(e) => setDeleteConfirmation(e.target.value)} autoComplete="off" />
+        </label>
+        <button type="button" disabled={busy || deleteConfirmation !== "DELETE MY MORI ACCOUNT"} onClick={deleteAccount} className="mt-4 min-h-12 rounded-xl bg-red-800 px-5 py-3 font-semibold text-white disabled:opacity-50">Permanently delete account</button>
       </section>
       {notice && (
         <p role="status" className="mt-4">

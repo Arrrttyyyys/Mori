@@ -7,6 +7,7 @@ export default function Footer() {
     { href: '/for-families', label: 'For Families' },
     { href: '/for-caregivers', label: 'For Caregivers' },
     { href: '/research', label: 'Research' },
+    { href: '/privacy', label: 'Privacy and Cookies' },
   ]
 
   return (
