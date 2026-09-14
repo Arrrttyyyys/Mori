@@ -1,1 +1,56 @@
-const { loadEnvConfig } = require('@next/env');\nconst { spawnSync } = require('node:child_process');\n\nloadEnvConfig(process.cwd(), false, { info() {}, error() {} });\nconst source = process.env.MORI_STAGING_DATABASE_URL;\nconst restored = process.env.MORI_RESTORE_DATABASE_URL;\nif (!source || !restored) {\n  console.error('Set MORI_STAGING_DATABASE_URL and MORI_RESTORE_DATABASE_URL to separate disposable projects.');\n  process.exit(1);\n}\nif (source === restored) {\n  console.error('Restore verification requires two different database URLs.');\n  process.exit(1);\n}\n\nfunction query(url, sql) {\n  const parsed = new URL(url);\n  const result = spawnSync('psql', ['-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1'], {\n    input: sql,\n    encoding: 'utf8',\n    env: {\n      ...process.env,\n      PGHOST: parsed.hostname,\n      PGPORT: parsed.port || '5432',\n      PGUSER: decodeURIComponent(parsed.username),\n      PGPASSWORD: decodeURIComponent(parsed.password),\n      PGDATABASE: parsed.pathname.slice(1) || 'postgres',\n      PGSSLMODE: 'require',\n      PGCONNECTTIMEOUT: '15',\n    },\n  });\n  if (result.status !== 0) throw new Error('Database comparison command failed.');\n  return result.stdout.trim();\n}\n\nconst inventorySql = `\nselect tablename || '=' || (xpath('/row/count/text()', query_to_xml(format('select count(*) as count from public.%I', tablename), false, true, '')))[1]::text\nfrom pg_tables\nwhere schemaname='public' and tablename <> 'mori_schema_migrations'\norder by tablename;\nselect 'migration=' || name from public.mori_schema_migrations order by name;\n`;\n\ntry {\n  const expected = query(source, inventorySql);\n  const actual = query(restored, inventorySql);\n  if (expected !== actual) {\n    console.error('Restore verification failed: public table counts or migration records differ.');\n    process.exit(1);\n  }\n  console.log('Restore verification passed: public table counts and migration records match.');\n  console.log('Complete the documented RLS, storage-hash, and signed-URL checks before approving the restore drill.');\n} catch (error) {\n  console.error(error.message);\n  process.exit(1);\n}\n\n
+const { loadEnvConfig } = require('@next/env');
+const { spawnSync } = require('node:child_process');
+
+loadEnvConfig(process.cwd(), false, { info() {}, error() {} });
+const source = process.env.MORI_STAGING_DATABASE_URL;
+const restored = process.env.MORI_RESTORE_DATABASE_URL;
+if (!source || !restored) {
+  console.error('Set MORI_STAGING_DATABASE_URL and MORI_RESTORE_DATABASE_URL to separate disposable projects.');
+  process.exit(1);
+}
+if (source === restored) {
+  console.error('Restore verification requires two different database URLs.');
+  process.exit(1);
+}
+
+function query(url, sql) {
+  const parsed = new URL(url);
+  const result = spawnSync('psql', ['-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1'], {
+    input: sql,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      PGHOST: parsed.hostname,
+      PGPORT: parsed.port || '5432',
+      PGUSER: decodeURIComponent(parsed.username),
+      PGPASSWORD: decodeURIComponent(parsed.password),
+      PGDATABASE: parsed.pathname.slice(1) || 'postgres',
+      PGSSLMODE: 'require',
+      PGCONNECTTIMEOUT: '15',
+    },
+  });
+  if (result.status !== 0) throw new Error('Database comparison command failed.');
+  return result.stdout.trim();
+}
+
+const inventorySql = `
+select tablename || '=' || (xpath('/row/count/text()', query_to_xml(format('select count(*) as count from public.%I', tablename), false, true, '')))[1]::text
+from pg_tables
+where schemaname='public' and tablename <> 'mori_schema_migrations'
+order by tablename;
+select 'migration=' || name from public.mori_schema_migrations order by name;
+`;
+
+try {
+  const expected = query(source, inventorySql);
+  const actual = query(restored, inventorySql);
+  if (expected !== actual) {
+    console.error('Restore verification failed: public table counts or migration records differ.');
+    process.exit(1);
+  }
+  console.log('Restore verification passed: public table counts and migration records match.');
+  console.log('Complete the documented RLS, storage-hash, and signed-URL checks before approving the restore drill.');
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
+}

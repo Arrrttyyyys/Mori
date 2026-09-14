@@ -1,1 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'\nimport { createClient } from '@supabase/supabase-js'\nimport { setAuthCookies } from '@/lib/auth/cookies'\n\nexport async function POST(request: NextRequest) {\n  if (request.headers.get('origin') !== request.nextUrl.origin) return NextResponse.json({ error: 'Request origin could not be verified' }, { status: 403 })\n  const body = await request.json().catch(() => ({}))\n  if (typeof body.email !== 'string' || typeof body.password !== 'string' || typeof body.name !== 'string' || !body.name.trim()) return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 })\n  const url = process.env.NEXT_PUBLIC_SUPABASE_URL\n  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY\n  if (!url || !key) return NextResponse.json({ error: 'Authentication is not configured' }, { status: 503 })\n  const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })\n  const { data, error } = await supabase.auth.signUp({ email: body.email.trim(), password: body.password, options: { data: { name: body.name.trim() } } })\n  if (error || !data.user) return NextResponse.json({ error: error?.message || 'Account creation failed' }, { status: 400 })\n  const response = NextResponse.json({ user: data.user, requiresEmailConfirmation: !data.session })\n  if (data.session) setAuthCookies(response, data.session)\n  return response\n}\n\n
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { setAuthCookies } from '@/lib/auth/cookies'
+
+export async function POST(request: NextRequest) {
+  if (request.headers.get('origin') !== request.nextUrl.origin) return NextResponse.json({ error: 'Request origin could not be verified' }, { status: 403 })
+  const body = await request.json().catch(() => ({}))
+  if (typeof body.email !== 'string' || typeof body.password !== 'string' || typeof body.name !== 'string' || !body.name.trim()) return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 })
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) return NextResponse.json({ error: 'Authentication is not configured' }, { status: 503 })
+  const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+  const { data, error } = await supabase.auth.signUp({ email: body.email.trim(), password: body.password, options: { data: { name: body.name.trim() } } })
+  if (error || !data.user) return NextResponse.json({ error: error?.message || 'Account creation failed' }, { status: 400 })
+  const response = NextResponse.json({ user: data.user, requiresEmailConfirmation: !data.session })
+  if (data.session) setAuthCookies(response, data.session)
+  return response
+}

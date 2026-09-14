@@ -1,1 +1,29 @@
-# Pilot measurement plan\n\nThe pilot measures feasibility, usability, and safety. It does not test whether Mori treats dementia or improves cognition.\n\n## Per-session record\n\n- Session offered, started, completed, or stopped\n- Duration and whether voice or typing was used\n- Participant assent at start and any later refusal\n- Number and type of supervisor interventions\n- Distress or safety event and resulting action\n- Pause, change-memory, voice-off, and finish controls used\n- Model timeout, malformed output, fallback, speech-recognition failure, or other technical failure\n- Caregiver appropriateness rating: helpful, neutral, or avoid\n- Participant comfort and willingness to use Mori again: yes, no, unclear, or not asked\n- Corrections or deletion requests\n\n## Aggregate reporting\n\nReport counts, denominators, medians, ranges, and short de-identified themes. Keep automated engagement, recognition, affect, and confusion outputs labeled as unvalidated estimates. Do not convert them into clinical scores or claim improvement.\n\n## Initial decision thresholds for advisor review\n\n- Pause the cohort after any critical safety or privacy incident.\n- Pause after failure of the visible stop control or cross-participant disclosure.\n- Review before further use after repeated distress, repeated unsafe model output, or the same technical failure in two sessions.\n- Continue to the next stage only when the advisor, safety lead, privacy lead, and pilot-site lead accept all material findings in writing.\n\nThe accountable reviewers must approve or replace these thresholds before enrollment.\n\n
+# Pilot measurement plan
+
+The pilot measures feasibility, usability, and safety. It does not test whether Mori treats dementia or improves cognition.
+
+## Per-session record
+
+- Session offered, started, completed, or stopped
+- Duration and whether voice or typing was used
+- Participant assent at start and any later refusal
+- Number and type of supervisor interventions
+- Distress or safety event and resulting action
+- Pause, change-memory, voice-off, and finish controls used
+- Model timeout, malformed output, fallback, speech-recognition failure, or other technical failure
+- Caregiver appropriateness rating: helpful, neutral, or avoid
+- Participant comfort and willingness to use Mori again: yes, no, unclear, or not asked
+- Corrections or deletion requests
+
+## Aggregate reporting
+
+Report counts, denominators, medians, ranges, and short de-identified themes. Keep automated engagement, recognition, affect, and confusion outputs labeled as unvalidated estimates. Do not convert them into clinical scores or claim improvement.
+
+## Initial decision thresholds for advisor review
+
+- Pause the cohort after any critical safety or privacy incident.
+- Pause after failure of the visible stop control or cross-participant disclosure.
+- Review before further use after repeated distress, repeated unsafe model output, or the same technical failure in two sessions.
+- Continue to the next stage only when the advisor, safety lead, privacy lead, and pilot-site lead accept all material findings in writing.
+
+The accountable reviewers must approve or replace these thresholds before enrollment.

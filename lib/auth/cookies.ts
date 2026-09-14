@@ -1,1 +1,31 @@
-import type { NextResponse } from 'next/server'\n\nexport const ACCESS_COOKIE = 'mori_access_token'\nexport const REFRESH_COOKIE = 'mori_refresh_token'\n\nconst baseOptions = {\n  httpOnly: true,\n  secure: process.env.NODE_ENV === 'production',\n  sameSite: 'lax' as const,\n  path: '/',\n  priority: 'high' as const,\n}\n\nexport function setAuthCookies(\n  response: NextResponse,\n  session: { access_token: string; refresh_token: string; expires_in?: number },\n) {\n  response.cookies.set(ACCESS_COOKIE, session.access_token, {\n    ...baseOptions,\n    maxAge: Math.max(60, session.expires_in ?? 3600),\n  })\n  response.cookies.set(REFRESH_COOKIE, session.refresh_token, {\n    ...baseOptions,\n    maxAge: 60 * 60 * 24 * 30,\n  })\n}\n\nexport function clearAuthCookies(response: NextResponse) {\n  response.cookies.set(ACCESS_COOKIE, '', { ...baseOptions, maxAge: 0 })\n  response.cookies.set(REFRESH_COOKIE, '', { ...baseOptions, maxAge: 0 })\n}\n\n
+import type { NextResponse } from 'next/server'
+
+export const ACCESS_COOKIE = 'mori_access_token'
+export const REFRESH_COOKIE = 'mori_refresh_token'
+
+const baseOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/',
+  priority: 'high' as const,
+}
+
+export function setAuthCookies(
+  response: NextResponse,
+  session: { access_token: string; refresh_token: string; expires_in?: number },
+) {
+  response.cookies.set(ACCESS_COOKIE, session.access_token, {
+    ...baseOptions,
+    maxAge: Math.max(60, session.expires_in ?? 3600),
+  })
+  response.cookies.set(REFRESH_COOKIE, session.refresh_token, {
+    ...baseOptions,
+    maxAge: 60 * 60 * 24 * 30,
+  })
+}
+
+export function clearAuthCookies(response: NextResponse) {
+  response.cookies.set(ACCESS_COOKIE, '', { ...baseOptions, maxAge: 0 })
+  response.cookies.set(REFRESH_COOKIE, '', { ...baseOptions, maxAge: 0 })
+}

@@ -1,1 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server'\nimport { ACCESS_COOKIE, clearAuthCookies } from '@/lib/auth/cookies'\nimport { createUserServerClient } from '@/lib/supabase/server'\n\nexport async function GET(request: NextRequest) {\n  const token = request.cookies.get(ACCESS_COOKIE)?.value\n  if (!token) return NextResponse.json({ user: null }, { status: 401 })\n  try {\n    const { data, error } = await createUserServerClient(token).auth.getUser()\n    if (error || !data.user) throw error || new Error('Invalid session')\n    return NextResponse.json({ user: data.user })\n  } catch {\n    const response = NextResponse.json({ user: null }, { status: 401 })\n    clearAuthCookies(response)\n    return response\n  }\n}\n\n
+import { NextRequest, NextResponse } from 'next/server'
+import { ACCESS_COOKIE, clearAuthCookies } from '@/lib/auth/cookies'
+import { createUserServerClient } from '@/lib/supabase/server'
+
+export async function GET(request: NextRequest) {
+  const token = request.cookies.get(ACCESS_COOKIE)?.value
+  if (!token) return NextResponse.json({ user: null }, { status: 401 })
+  try {
+    const { data, error } = await createUserServerClient(token).auth.getUser()
+    if (error || !data.user) throw error || new Error('Invalid session')
+    return NextResponse.json({ user: data.user })
+  } catch {
+    const response = NextResponse.json({ user: null }, { status: 401 })
+    clearAuthCookies(response)
+    return response
+  }
+}
