@@ -216,7 +216,17 @@ Respond with ONLY valid JSON in this exact format:
   }
 
   private async callLLM(prompt: string, userMessage: string, context?: SessionContext): Promise<string> {
-    if (process.env.MORI_AI_PROVIDER === 'local') { this.lastProvider = 'local'; return this.callLocal(prompt) }
+    if (process.env.MORI_AI_PROVIDER === 'local') {
+      this.lastProvider = 'local'
+      try {
+        return await this.callLocal(prompt)
+      } catch (error) {
+        if (context?.session.user_id !== 'demo_patient') throw error
+        this.lastProvider = 'mock'
+        console.info('Local model unavailable; using fictional demo responses.')
+        return this.getMockResponse(userMessage, context)
+      }
+    }
     if (this.geminiApiKey && !this.geminiDisabled) {
       try {
         this.lastProvider = 'gemini'
