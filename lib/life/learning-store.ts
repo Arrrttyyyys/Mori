@@ -9,6 +9,9 @@ import { createAdminServerClient } from "@/lib/supabase/server";
 const shared = globalThis as typeof globalThis & {
   moriLearned?: Map<string, Map<string, LongitudinalMemoryState>>;
 };
+export function resetDemoLearning(userId: string) {
+  shared.moriLearned?.delete(userId);
+}
 export async function readLearning(
   identity: RequestIdentity,
 ): Promise<Map<string, LongitudinalMemoryState>> {

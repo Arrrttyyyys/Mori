@@ -23,6 +23,7 @@
     "dev:staging": "node scripts/staging-app.cjs",
     "model:start": "node scripts/local-model.cjs",
     "model:health": "node scripts/model-health.cjs",
+    "monitor:check": "node scripts/monitor-check.cjs",
     "test:local-provider": "tsc lib/therapy/therapy-brain.ts --module commonjs --moduleResolution node --target es2020 --esModuleInterop --skipLibCheck --outDir /tmp/mori-local-test --noEmit false && node tests/local-provider.cjs",
     "test:communication": "tsc lib/therapy/therapy-brain.ts lib/therapy/types.ts --module commonjs --moduleResolution node --target es2020 --esModuleInterop --skipLibCheck --outDir /tmp/mori-communication-eval --noEmit false && node tests/communication-eval.cjs",
     "test:long-conversation": "tsc lib/therapy/therapy-brain.ts lib/therapy/types.ts --module commonjs --moduleResolution node --target es2020 --esModuleInterop --skipLibCheck --outDir /tmp/mori-long-eval --noEmit false && node tests/long-conversation-eval.cjs"

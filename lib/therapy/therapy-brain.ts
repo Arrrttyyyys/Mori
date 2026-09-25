@@ -123,12 +123,23 @@ export class TherapyBrain {
   private geminiDisabled = false
   private lastGenerationUsedFallback = false
   private lastGenerationUsedModel = false
+  private lastMalformedResponses = 0
+  private lastProvider = 'none'
 
-  getLastGenerationDiagnostics(): { usedFallback: boolean; usedModel: boolean } {
+  getLastGenerationDiagnostics(): { usedFallback: boolean; usedModel: boolean; malformedResponses: number; provider: string } {
     return {
       usedFallback: this.lastGenerationUsedFallback,
       usedModel: this.lastGenerationUsedModel,
+      malformedResponses: this.lastMalformedResponses,
+      provider: this.lastProvider,
     }
+  }
+
+  resetGenerationDiagnostics(provider = 'deterministic') {
+    this.lastGenerationUsedFallback = false
+    this.lastGenerationUsedModel = false
+    this.lastMalformedResponses = 0
+    this.lastProvider = provider
   }
 
   constructor() {
@@ -146,8 +157,7 @@ export class TherapyBrain {
     userMessage: string,
     context: SessionContext
   ): Promise<TherapyResponse> {
-    this.lastGenerationUsedFallback = false
-    this.lastGenerationUsedModel = false
+    this.resetGenerationDiagnostics()
     const neutralResponse: TherapyResponse = {
       spoken_response: '', next_question: '', show_photo: false, photo_id: null,
       emotional_state: 'calm', session_action: 'continue',
@@ -206,9 +216,10 @@ Respond with ONLY valid JSON in this exact format:
   }
 
   private async callLLM(prompt: string, userMessage: string, context?: SessionContext): Promise<string> {
-    if (process.env.MORI_AI_PROVIDER === 'local') return this.callLocal(prompt)
+    if (process.env.MORI_AI_PROVIDER === 'local') { this.lastProvider = 'local'; return this.callLocal(prompt) }
     if (this.geminiApiKey && !this.geminiDisabled) {
       try {
+        this.lastProvider = 'gemini'
         return await this.callGemini(prompt)
       } catch (error) {
         console.error('Gemini response unavailable.')
@@ -218,6 +229,7 @@ Respond with ONLY valid JSON in this exact format:
 
     if (!this.apiKey || this.apiKey === '' || this.providerDisabled) {
       if (context?.session.user_id !== 'demo_patient') throw new Error('AI provider unavailable')
+      this.lastProvider = 'mock'
       console.warn('⚠️ No API key found. Using contextual mock responses.')
       console.warn('   To use OpenAI, add OPENAI_API_KEY to your .env.local file and restart the server.')
       return this.getMockResponse(userMessage, context)
@@ -225,6 +237,7 @@ Respond with ONLY valid JSON in this exact format:
     
 
     try {
+      this.lastProvider = 'openai'
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -687,6 +700,7 @@ Respond with ONLY valid JSON in this exact format:
     } catch (error) {
       console.error('Therapy provider returned malformed structured output.')
       this.lastGenerationUsedFallback = true
+      this.lastMalformedResponses += 1
       return this.getFallbackResponse('')
     }
   }

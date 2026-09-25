@@ -25,6 +25,10 @@ export const demoDetails = () =>
     string,
     Partial<LifeMemory>
   >());
+export function resetDemoLife() {
+  globalStore.moriLife = undefined;
+  globalStore.moriDemoMemoryDetails = undefined;
+}
 export async function loadLife(identity: RequestIdentity): Promise<LifeData> {
   if (identity.mode === "demo") return structuredClone(demoLife());
   const [profile, records] = await Promise.all([

@@ -67,6 +67,12 @@ export class SessionStore {
     return summaries.join('; ')
   }
 
+  resetUser(userId: string): void {
+    this.sessions.forEach((session, id) => {
+      if (session.user_id === userId) this.sessions.delete(id)
+    })
+  }
+
   // In production, replace with database persistence
   // For now, this is in-memory storage
 }

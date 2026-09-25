@@ -22,6 +22,10 @@ const demo = globalThis as typeof globalThis & {
 };
 const observations = () => (demo.moriObservations ??= new Map());
 const decisions = () => (demo.moriDecisions ??= new Map());
+export function resetDemoSessionEngine(userId: string) {
+  demo.moriObservations?.delete(userId);
+  demo.moriDecisions?.delete(userId);
+}
 export async function readObservations(
   identity: RequestIdentity,
 ): Promise<StimulusObservation[]> {

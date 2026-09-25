@@ -2,7 +2,6 @@
 
 import { useState, FormEvent } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { PILOT_DEMO_ACCOUNT } from '@/lib/demo-account'
 
 export default function Auth() {
   const [isSignIn, setIsSignIn] = useState(true)
@@ -11,6 +10,8 @@ export default function Auth() {
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [demoCode, setDemoCode] = useState('')
+  const [demoSubmitting, setDemoSubmitting] = useState(false)
   const { login, signup, enterDemo } = useAuth()
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -85,15 +86,6 @@ export default function Auth() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {isSignIn && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-                <p className="font-semibold">Local pilot test account</p>
-                <p className="mt-1">Fictional data only. Do not enter real patient information.</p>
-                <button type="button" onClick={() => { setEmail(PILOT_DEMO_ACCOUNT.email); setPassword(PILOT_DEMO_ACCOUNT.password) }} className="mt-3 font-semibold text-primary underline">
-                  Fill test credentials
-                </button>
-              </div>
-            )}
             {error && (
               <div className="bg-secondary/50 border border-primary/30 text-text px-4 py-3 rounded-xl text-lg">
                 {error}
@@ -186,12 +178,15 @@ export default function Auth() {
 
           {/* Guided demo */}
           <div className="space-y-3">
+            <label htmlFor="demo-code" className="block text-sm font-medium text-text/80">Demo access code</label>
+            <input id="demo-code" type="password" autoComplete="off" value={demoCode} onChange={(event) => setDemoCode(event.target.value)} className="w-full rounded-xl border border-secondary/50 px-4 py-3 text-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="Enter the private demo code" />
             <button
               type="button"
-              onClick={enterDemo}
+              disabled={demoSubmitting}
+              onClick={async () => { setError(''); setDemoSubmitting(true); const result = await enterDemo(demoCode); if (!result.ok) setError(result.error || 'Demo access is unavailable.'); setDemoSubmitting(false) }}
               className="w-full bg-secondary/40 border-2 border-primary/30 text-text py-4 rounded-xl hover:border-primary transition-colors duration-500 text-lg font-medium shadow-md"
             >
-              Enter the guided demo
+              {demoSubmitting ? 'Checking access…' : 'Enter the guided demo'}
             </button>
             <p className="text-center text-sm leading-relaxed text-text/60">Uses fictional sample memories and does not create an account.</p>
           </div>

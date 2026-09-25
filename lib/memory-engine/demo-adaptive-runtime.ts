@@ -190,3 +190,9 @@ export function applyCaregiverFeedback(
 export function getAdaptiveSnapshot(sessionId: string): AdaptiveSnapshot | null {
   return latestSnapshotBySession.get(sessionId) ?? null
 }
+
+export function resetAdaptiveDemo(userId: string) {
+  observationsByUser.delete(userId)
+  latestSnapshotByUser.delete(userId)
+  latestSnapshotBySession.clear()
+}

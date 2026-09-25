@@ -20,12 +20,17 @@ export class SessionOrchestrator {
     this.safetyMonitor = new SafetyMonitor()
   }
 
+  getLastGenerationDiagnostics() {
+    return this.therapyBrain.getLastGenerationDiagnostics()
+  }
+
   async processTurn(
     session: TherapySession,
     userMessage: string,
     photoMetadata?: PhotoMetadata,
     extraContext?: ExtraSessionContext
   ): Promise<TherapyResponse> {
+    this.therapyBrain.resetGenerationDiagnostics()
     if (this.wantsToEndSession(userMessage, Boolean(session.close_offer_turn))) {
       const closure = this.getSessionClosureResponse()
       this.addTurn(session, userMessage, closure, photoMetadata?.photo_id)

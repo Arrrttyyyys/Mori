@@ -31,6 +31,20 @@ assert.match(auth, /requestedUserId !== data\.user\.id/, 'user-scoped routes mus
 assert.match(auth, /pilot_memberships/, 'care-team access must require an active role grant')
 assert.match(auth, /request\.cookies\.get\(ACCESS_COOKIE\)/, 'APIs must accept the server-managed access cookie')
 assert.match(auth, /Request origin could not be verified/, 'state-changing cookie requests must verify their origin')
+assert.match(auth, /hasValidDemoAccess\(request\)/, 'a browser header alone must not authorize demo mode')
+
+const demoAccess = read('lib/operations/demo-access.ts')
+assert.match(demoAccess, /httpOnly: true/, 'demo access must use an HttpOnly cookie')
+assert.match(demoAccess, /timingSafeEqual/, 'demo secrets must use constant-time comparison')
+const monitoring = read('lib/operations/monitoring.ts')
+for (const sensitive of ['user_message', 'spoken_response', 'memory_title', 'email']) {
+  assert.doesNotMatch(monitoring, new RegExp(sensitive), `monitoring must not record ${sensitive}`)
+}
+const operationsRoute = read('app/api/operations/metrics/route.ts')
+assert.match(operationsRoute, /MORI_OPERATIONS_TOKEN/, 'operations metrics must require a separate server token')
+const demoMigration = read('supabase/migrations/202609240001_demo_protection_monitoring.sql')
+assert.match(demoMigration, /consume_mori_demo_quota/, 'demo usage limits must be enforced atomically in the database')
+assert.match(demoMigration, /enable row level security/, 'operational tables must have RLS enabled')
 
 const authCookies = read('lib/auth/cookies.ts')
 assert.match(authCookies, /httpOnly: true/, 'auth cookies must be inaccessible to browser JavaScript')

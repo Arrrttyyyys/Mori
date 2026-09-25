@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { PILOT_DEMO_ACCOUNT } from "@/lib/demo-account";
 import { createUserServerClient } from "@/lib/supabase/server";
 import { ACCESS_COOKIE } from "@/lib/auth/cookies";
+import { hasValidDemoAccess } from "@/lib/operations/demo-access";
 
 export type RequestIdentity =
   | {
@@ -39,6 +40,8 @@ export async function requireRequestIdentity(
       throw new AuthError(403, "Request origin could not be verified");
   }
   if (request.headers.get("x-mori-demo-mode") === "true") {
+    if (!hasValidDemoAccess(request))
+      throw new AuthError(401, "Demo access has expired or is not authorized");
     if (requestedUserId && requestedUserId !== PILOT_DEMO_ACCOUNT.userId) {
       throw new AuthError(
         403,

@@ -159,3 +159,7 @@ export function addReflection(userId: string, text: string): ReflectionItem {
   data.family_space.reflections.unshift(item)
   return item
 }
+
+export function resetUserData(userId: string): void {
+  store.delete(userId)
+}

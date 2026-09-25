@@ -36,6 +36,16 @@ export default function PilotSafetyCenter() {
     const data = await response.json(); if(!response.ok){setError(data.error??'Could not save consent');return};setConsent(data.consent); setReadiness(data.readiness); setSaved(true); await load()
   }
 
+  const resetDemo = async () => {
+    if (userId !== 'demo_patient') return
+    setError('')
+    const response = await authorizedFetch(`/api/pilot/${encodeURIComponent(userId)}`, { method: 'DELETE' })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) { setError(data.error ?? 'Could not reset the demo'); return }
+    setSaved(false)
+    await load()
+  }
+
   const statusSelect = (label: string, key: 'patientConsent' | 'representativeConsent' | 'patientAssent') => (
     <label className="block"><span className="mb-2 block font-medium">{label}</span><select className="w-full rounded-xl border border-primary/20 bg-white p-3" value={consent[key]} onChange={(e) => setConsent({ ...consent, [key]: e.target.value as PilotConsent[typeof key] })}>
       <option value="not_started">Not started</option><option value="pending">Pending</option><option value="granted">Granted</option><option value="withdrawn">Withdrawn</option>
@@ -46,6 +56,7 @@ export default function PilotSafetyCenter() {
     <Link href="/room" className="text-text/70 hover:text-primary">← Back to your room</Link>
     <h1 className="mt-5 text-4xl font-semibold">Pilot Safety Center</h1>
     <p className="mt-3 text-lg text-text/70">Operational controls for supervised use. This dashboard does not replace clinical, legal, privacy, or IRB review.</p>
+    {userId === 'demo_patient' && <button type="button" onClick={resetDemo} className="mt-5 rounded-xl border border-primary/30 bg-white px-5 py-3 font-medium text-text hover:border-primary">Reset all fictional demo data</button>}
 
     {error&&<p role="alert" className="mt-5 text-red-700">{error}</p>}
     <section className="mt-10 rounded-3xl bg-white p-7 shadow-lg"><h2 className="text-2xl font-semibold">Consent and ongoing assent</h2><p className="mt-2 text-text/65">The participant's present refusal always stops a session, even when a representative previously consented.</p>

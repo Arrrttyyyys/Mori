@@ -21,6 +21,7 @@ import {
 } from "@/lib/auth/server-auth";
 import { SupabaseSessionStore } from "@/lib/therapy/supabase-session-store";
 import { createAdminServerClient } from "@/lib/supabase/server";
+import { consumeDemoQuota, recordOperationalEvent } from "@/lib/operations/monitoring";
 
 const sessionStore = new SessionStore();
 const orchestrator = new SessionOrchestrator();
@@ -122,6 +123,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    if (identity.mode === "demo") {
+      const quota = await consumeDemoQuota(request, "session");
+      if (!quota.allowed)
+        return NextResponse.json(
+          { error: "The demo session limit has been reached. Please try again later." },
+          { status: 429, headers: { "Retry-After": String(quota.retryAfter) } },
+        );
+    }
+
     await requireSessionConsent(identity);
     // Create new session
     const newSession =
@@ -146,8 +156,21 @@ export async function GET(request: NextRequest) {
 // Process a turn in the session
 export async function POST(request: NextRequest) {
   let release: (() => Promise<void>) | null = null;
+  const startedAt = Date.now();
+  let identityMode: "demo" | "supabase" | "anonymous" = "anonymous";
+  let metricClientKey: string | undefined;
   try {
     const identity = await requireRequestIdentity(request);
+    identityMode = identity.mode;
+    if (identity.mode === "demo") {
+      const quota = await consumeDemoQuota(request, "turn");
+      metricClientKey = quota.clientKeyHash;
+      if (!quota.allowed)
+        return NextResponse.json(
+          { error: "This demo has reached its usage limit. Please try again later." },
+          { status: 429, headers: { "Retry-After": String(quota.retryAfter) } },
+        );
+    }
     await requireSessionConsent(identity);
     const body = await request.json();
     const { session_id, user_message } = body;
@@ -276,6 +299,18 @@ export async function POST(request: NextRequest) {
         : undefined,
       extraContext,
     );
+    const diagnostics = orchestrator.getLastGenerationDiagnostics();
+    await recordOperationalEvent({
+      eventName: "model_turn",
+      route: "/api/therapy/session",
+      statusCode: 200,
+      latencyMs: Date.now() - startedAt,
+      provider: diagnostics.provider,
+      usedFallback: diagnostics.usedFallback,
+      malformedResponses: diagnostics.malformedResponses,
+      identityMode,
+      clientKeyHash: metricClientKey,
+    });
     const newTurn = safeSession.turns.at(-1);
     if (newTurn) session.turns.push(newTurn);
     session.last_activity = safeSession.last_activity;
@@ -403,6 +438,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const authResponse = authErrorResponse(error);
+    const statusCode = authResponse?.status ?? 500;
+    await recordOperationalEvent({ eventName: "api_error", route: "/api/therapy/session", statusCode, latencyMs: Date.now() - startedAt, identityMode, clientKeyHash: metricClientKey });
     if (authResponse) return authResponse;
     console.error("Turn processing failed.");
     return NextResponse.json(
