@@ -17,6 +17,12 @@ const blank = () => ({
   avoidUntil: "",
   mediaKind: "story" as LifeMemory["mediaKind"],
 });
+type PendingMedia = {
+  id: string;
+  file: File;
+  title: string;
+  preview: string;
+};
 export default function Library() {
   const {
     life,
@@ -31,11 +37,26 @@ export default function Library() {
   const [form, setForm] = useState<ReturnType<typeof blank>>(blank());
   const [editing, setEditing] = useState<LifeMemory | null>(null);
   const [open, setOpen] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<PendingMedia[]>([]);
   const [busy, setBusy] = useState(false);
+  const [saveProgress, setSaveProgress] = useState(0);
+  const [saveTotal, setSaveTotal] = useState(0);
   const [filter, setFilter] = useState("");
   const [search, setSearch] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const clearFiles = () => {
+    setFiles((current) => {
+      current.forEach((item) => URL.revokeObjectURL(item.preview));
+      return [];
+    });
+  };
+  const removePendingFile = (id: string) => {
+    setFiles((current) => {
+      const removed = current.find((item) => item.id === id);
+      if (removed) URL.revokeObjectURL(removed.preview);
+      return current.filter((item) => item.id !== id);
+    });
+  };
   const setContext = (patch: Partial<MemoryContext>) =>
     setForm({ ...form, context: { ...form.context, ...patch } });
   const toggle = (field: "personIds" | "albumIds", id: string) =>
@@ -46,7 +67,13 @@ export default function Library() {
     });
   const save = async () => {
     if (!userId) return;
+    if (!editing && files.length && files.some((item) => !item.title.trim())) {
+      setError("Add a title for every selected photo or file.");
+      return;
+    }
     setBusy(true);
+    setSaveProgress(0);
+    setSaveTotal(files.length || 1);
     setError("");
     try {
       if (editing) {
@@ -66,8 +93,13 @@ export default function Library() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
       } else {
-        const sources = files.length ? files : [null];
-        for (const file of sources) {
+        const sources: Array<PendingMedia | null> = files.length
+          ? [...files]
+          : [null];
+        for (let index = 0; index < sources.length; index += 1) {
+          const pending = sources[index];
+          const file = pending?.file ?? null;
+          setSaveProgress(index + 1);
           let uploaded: { url: string; path: string } | null = null;
           let image = "";
           if (file) {
@@ -100,10 +132,7 @@ export default function Library() {
               avoidUntil: form.avoidUntil
                 ? new Date(form.avoidUntil).toISOString()
                 : null,
-              title:
-                files.length > 1
-                  ? file!.name.replace(/\.[^.]+$/, "")
-                  : form.title || file?.name.replace(/\.[^.]+$/, ""),
+              title: pending?.title.trim() || form.title.trim(),
               image,
               storage_path: uploaded?.path,
               mediaKind,
@@ -114,17 +143,21 @@ export default function Library() {
             if (uploaded) await deleteMemoryPhotoByPath(uploaded.path);
             throw new Error(data.error);
           }
+          if (pending) removePendingFile(pending.id);
         }
       }
       setOpen(false);
-      setFiles([]);
+      clearFiles();
       setEditing(null);
       setForm(blank());
       await reload();
     } catch (e) {
       setError((e as Error).message);
+      await reload().catch(() => undefined);
     } finally {
       setBusy(false);
+      setSaveProgress(0);
+      setSaveTotal(0);
     }
   };
   const suggest = async () => {
@@ -185,7 +218,7 @@ export default function Library() {
           onClick={() => {
             setEditing(null);
             setForm(blank());
-            setFiles([]);
+            clearFiles();
             setOpen(true);
             fileRef.current?.click();
           }}
@@ -197,7 +230,7 @@ export default function Library() {
           onClick={() => {
             setEditing(null);
             setForm(blank());
-            setFiles([]);
+            clearFiles();
             setOpen(true);
           }}
         >
@@ -215,12 +248,16 @@ export default function Library() {
               setError("Please choose files smaller than 50 MB.");
               return;
             }
-            setFiles(chosen);
-            if (chosen.length === 1)
-              setForm((f) => ({
-                ...f,
-                title: chosen[0].name.replace(/\.[^.]+$/, ""),
-              }));
+            setFiles((current) => [
+              ...current,
+              ...chosen.map((file) => ({
+                id: crypto.randomUUID(),
+                file,
+                title: "",
+                preview: URL.createObjectURL(file),
+              })),
+            ]);
+            setOpen(true);
             e.target.value = "";
           }}
         />
@@ -251,16 +288,100 @@ export default function Library() {
                 ? `${files.length} file${files.length > 1 ? "s" : ""} selected`
                 : "Write a memory"}
           </h2>
+          {!editing && files.length > 0 && (
+            <section aria-labelledby="selected-media-heading" className="mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 id="selected-media-heading" className="text-xl font-semibold">
+                    Add a title for each item
+                  </h3>
+                  <p className="mt-1 text-sm text-text/65">
+                    Each selected photo or file will be saved as its own memory.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => fileRef.current?.click()}
+                  className="rounded-xl border border-primary/30 bg-white px-4 py-3 font-medium"
+                >
+                  Add more files
+                </button>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {files.map((item, index) => (
+                  <article
+                    key={item.id}
+                    className="overflow-hidden rounded-2xl border border-primary/20 bg-white"
+                  >
+                    {item.file.type.startsWith("image/") ? (
+                      <img
+                        src={item.preview}
+                        alt=""
+                        className="aspect-[4/3] w-full object-cover"
+                      />
+                    ) : item.file.type.startsWith("video/") ? (
+                      <video
+                        src={item.preview}
+                        className="aspect-video w-full bg-black object-contain"
+                      />
+                    ) : (
+                      <div className="flex min-h-28 items-center justify-center bg-secondary/20 px-4 text-center text-text/70">
+                        Audio file<br />{item.file.name}
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <label
+                        className="block font-medium"
+                        htmlFor={`media-title-${item.id}`}
+                      >
+                        Title for item {index + 1}
+                      </label>
+                      <input
+                        id={`media-title-${item.id}`}
+                        required
+                        disabled={busy}
+                        autoFocus={index === 0}
+                        className={`${fieldClass} mt-2`}
+                        value={item.title}
+                        onChange={(event) =>
+                          setFiles((current) =>
+                            current.map((candidate) =>
+                              candidate.id === item.id
+                                ? { ...candidate, title: event.target.value }
+                                : candidate,
+                            ),
+                          )
+                        }
+                        placeholder="For example, Sunday at the lake"
+                      />
+                      <p className="mt-2 truncate text-xs text-text/55" title={item.file.name}>
+                        {item.file.name}
+                      </p>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => removePendingFile(item.id)}
+                        className="mt-3 text-sm font-medium text-red-700 underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
           <div className="grid gap-4 md:grid-cols-2">
-            <label>
+            {(editing || files.length === 0) && <label>
               Title
               <input
-                required={files.length === 0}
+                required
                 className={`${fieldClass} mt-1`}
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
               />
-            </label>
+            </label>}
             <label>
               Date or life period
               <input
@@ -419,13 +540,20 @@ export default function Library() {
               </button>
             )}
             <button disabled={busy} className={buttonClass}>
-              {busy ? "Saving…" : "Save memory"}
+              {busy
+                ? `Saving ${saveProgress} of ${saveTotal}…`
+                : files.length > 1
+                  ? `Save ${files.length} memories`
+                  : "Save memory"}
             </button>
             <button
               type="button"
               className="px-4"
               disabled={busy}
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                clearFiles();
+              }}
             >
               Cancel
             </button>
@@ -530,7 +658,7 @@ export default function Library() {
                             : "",
                           mediaKind: m.mediaKind,
                         });
-                        setFiles([]);
+                        clearFiles();
                         setOpen(true);
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }}
