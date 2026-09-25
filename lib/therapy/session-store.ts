@@ -16,6 +16,7 @@ export class SessionStore {
       user_id: userId,
       turns: [],
       current_photo_id: null,
+      pending_memory_id: null,
       emotional_states: [],
       topics_discussed: [],
       started_at: new Date(),

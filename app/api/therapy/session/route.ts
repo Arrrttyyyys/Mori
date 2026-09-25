@@ -244,7 +244,22 @@ export async function POST(request: NextRequest) {
       user_message,
       typeof body.mode === "string" ? body.mode.slice(0, 40) : "guided",
     );
-    const selectedMemory = prepared.selected;
+    const turnCountBefore = session.turns.length;
+    const proposedMemory = prepared.selected;
+    const pendingMemory = session.pending_memory_id
+      ? prepared.relevant.find(
+          (memory) => String(memory.id) === session.pending_memory_id,
+        ) ?? null
+      : null;
+    const selectedMemory = pendingMemory ?? proposedMemory;
+    const acceptsMemory =
+      /^(?:yes|yes please|okay|ok|sure|please|i(?:'d| would) like that|show me)(?:[.! ]|$)/i.test(
+        user_message.trim(),
+      );
+    const declinesMemory =
+      /^(?:no|no thanks|not now|maybe later|keep talking|i(?:'d| would) rather not)(?:[.! ]|$)/i.test(
+        user_message.trim(),
+      );
     const directMoriQuestion =
       /\b(how are you|how about you|tell me about yourself|what can you do)\b/i.test(
         user_message,
@@ -263,10 +278,12 @@ export async function POST(request: NextRequest) {
           prepared.safeText(t.therapist_response.next_question),
       ),
       topics_discussed: session.topics_discussed.filter(prepared.safeText),
-      current_photo_id: selectedMemory ? String(selectedMemory.id) : null,
+      current_photo_id: session.current_photo_id,
+      pending_memory_id: session.pending_memory_id ?? null,
     };
+    const smallTalkOnly = turnCountBefore < 2 && !pendingMemory;
     const extraContext = {
-      memory_library: prepared.relevant.map((m) => ({
+      memory_library: (smallTalkOnly ? [] : prepared.relevant).map((m) => ({
         id: m.id,
         title: m.title,
         date: m.date,
@@ -276,7 +293,7 @@ export async function POST(request: NextRequest) {
     const response = await orchestrator.processTurn(
       safeSession,
       user_message,
-      selectedMemory
+      selectedMemory && !smallTalkOnly
         ? {
             photo_id: String(selectedMemory.id),
             people:
@@ -317,9 +334,8 @@ export async function POST(request: NextRequest) {
     session.emotional_states = safeSession.emotional_states;
     session.close_offer_turn = safeSession.close_offer_turn;
     session.status = safeSession.status;
-    session.current_photo_id = selectedMemory
-      ? String(selectedMemory.id)
-      : null;
+    session.current_photo_id = safeSession.current_photo_id;
+    session.pending_memory_id = safeSession.pending_memory_id ?? null;
     if (
       !prepared.safeText(
         response.spoken_response + " " + response.next_question,
@@ -372,30 +388,52 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (
-      selectedMemory &&
-      response.session_action !== "close" &&
-      !response.safety?.supervisor_attention &&
-      !directMoriQuestion
-    ) {
-      if (explicitChangeRequest && session.turns.length > 1) {
-        response.spoken_response = `That sounds meaningful. I have another approved family memory here called “${selectedMemory.title}.”`;
-        response.next_question = "Would you like to look at it together?";
-        response.emotional_state = "calm";
-      }
-      response.show_photo = true;
-      response.photo_id = String(selectedMemory.id);
-      session.current_photo_id = String(selectedMemory.id);
-      if (!session.topics_discussed.includes(selectedMemory.title)) {
-        session.topics_discussed.push(selectedMemory.title);
-      }
-    } else if (response.safety?.supervisor_attention || directMoriQuestion) {
+    if (response.safety?.supervisor_attention || directMoriQuestion) {
       response.show_photo = false;
       response.photo_id = null;
       if (response.safety?.supervisor_attention)
         session.current_photo_id = null;
       const latestTurn = session.turns[session.turns.length - 1];
       if (latestTurn) latestTurn.photo_id = null;
+    } else if (pendingMemory && response.session_action !== "close") {
+      if (acceptsMemory) {
+        response.spoken_response = `Of course. Let me show you “${pendingMemory.title}.”`;
+        response.show_photo = true;
+        response.photo_id = String(pendingMemory.id);
+        session.current_photo_id = String(pendingMemory.id);
+        session.pending_memory_id = null;
+        if (!session.topics_discussed.includes(pendingMemory.title))
+          session.topics_discussed.push(pendingMemory.title);
+      } else if (declinesMemory) {
+        response.spoken_response = "Of course. We can keep talking without looking at a memory.";
+        response.next_question = "How are you feeling right now?";
+        response.show_photo = false;
+        response.photo_id = null;
+        session.current_photo_id = null;
+        session.pending_memory_id = null;
+      } else {
+        response.spoken_response = `I have a family memory here called “${pendingMemory.title}.”`;
+        response.next_question = "Would you like me to show it, or shall we keep talking?";
+        response.show_photo = false;
+        response.photo_id = null;
+      }
+      response.emotional_state = "calm";
+    } else if (
+      selectedMemory &&
+      response.session_action !== "close" &&
+      (turnCountBefore >= 2 || explicitChangeRequest)
+    ) {
+      response.spoken_response = `I’ve enjoyed talking with you. I have a family memory here called “${selectedMemory.title}.”`;
+      response.next_question = "Would you like me to show it?";
+      response.show_photo = false;
+      response.photo_id = null;
+      response.emotional_state = "calm";
+      session.current_photo_id = null;
+      session.pending_memory_id = String(selectedMemory.id);
+    } else {
+      response.show_photo = false;
+      response.photo_id = null;
+      session.current_photo_id = null;
     }
     const persistedTurn = session.turns.at(-1);
     if (persistedTurn)

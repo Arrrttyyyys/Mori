@@ -32,6 +32,7 @@ export interface TherapySession {
   user_id: string
   turns: SessionTurn[]
   current_photo_id: string | null
+  pending_memory_id?: string | null
   emotional_states: string[]
   topics_discussed: string[]
   started_at: Date

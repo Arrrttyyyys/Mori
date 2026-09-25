@@ -21,6 +21,7 @@ function mapSession(row: any, turns: any[] = []): TherapySession {
       photo_id: turn.memory_id,
     })),
     current_photo_id: row.current_memory_id,
+    pending_memory_id: row.pending_memory_id ?? null,
     emotional_states: row.emotional_states ?? [],
     topics_discussed: row.topics_discussed ?? [],
     started_at: new Date(row.started_at),
@@ -54,6 +55,7 @@ export class SupabaseSessionStore {
     const { error } = await this.client.from('therapy_sessions').update({
       status: session.status,
       current_memory_id: session.current_photo_id,
+      pending_memory_id: session.pending_memory_id ?? null,
       emotional_states: session.emotional_states,
       topics_discussed: session.topics_discussed,
       close_offer_turn: session.close_offer_turn ?? null,

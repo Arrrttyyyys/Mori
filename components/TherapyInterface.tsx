@@ -31,6 +31,7 @@ export default function TherapyInterface({
   const [closed, setClosed] = useState(false);
   const [voice, setVoice] = useState(false);
   const [moriSpeaking, setMoriSpeaking] = useState(false);
+  const [speechBeat, setSpeechBeat] = useState(false);
   const [mediaPlaying, setMediaPlaying] = useState(false);
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
@@ -56,6 +57,7 @@ export default function TherapyInterface({
   const pausedRef = useRef(false);
   const sendRef = useRef<(text: string) => Promise<void>>(async () => {});
   const restart = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const speechAnimation = useRef<ReturnType<typeof setInterval> | null>(null);
   const latestSpeech = useRef<{ text: string; at: number }>({
     text: "",
     at: 0,
@@ -82,6 +84,9 @@ export default function TherapyInterface({
   }, []);
   const stopAudio = () => {
     if (restart.current) clearTimeout(restart.current);
+    if (speechAnimation.current) clearInterval(speechAnimation.current);
+    speechAnimation.current = null;
+    setSpeechBeat(false);
     recognition.current?.abort();
     window.speechSynthesis?.cancel();
     speaking.current = false;
@@ -105,7 +110,15 @@ export default function TherapyInterface({
       available.find((v) => v.lang.toLowerCase() === language.toLowerCase()) ??
       available.find((v) => v.lang.startsWith(language.split("-")[0])) ??
       null;
+    speechAnimation.current = setInterval(
+      () => setSpeechBeat((current) => !current),
+      180,
+    );
+    utterance.onboundary = () => setSpeechBeat((current) => !current);
     utterance.onend = utterance.onerror = () => {
+      if (speechAnimation.current) clearInterval(speechAnimation.current);
+      speechAnimation.current = null;
+      setSpeechBeat(false);
       speaking.current = false;
       setMoriSpeaking(false);
       if (mounted.current) restart.current = setTimeout(startListening, 500);
@@ -252,6 +265,7 @@ export default function TherapyInterface({
       mounted.current = false;
       active.current = false;
       if (restart.current) clearTimeout(restart.current);
+      if (speechAnimation.current) clearInterval(speechAnimation.current);
       if (recognition.current) {
         recognition.current.onend = null;
         recognition.current.onresult = null;
@@ -285,6 +299,9 @@ export default function TherapyInterface({
   };
   const stopMoriSpeaking = () => {
     window.speechSynthesis?.cancel();
+    if (speechAnimation.current) clearInterval(speechAnimation.current);
+    speechAnimation.current = null;
+    setSpeechBeat(false);
     speaking.current = false;
     setMoriSpeaking(false);
     restart.current = setTimeout(startListening, 300);
@@ -455,12 +472,19 @@ export default function TherapyInterface({
             </figure>
           ) : (
             <div className="relative z-10 text-center">
-              <div className="mx-auto mb-7 w-fit rounded-full bg-[#dbe3d9]/10 p-3 ring-1 ring-white/15 shadow-2xl">
+              <div className={`relative mx-auto mb-7 w-fit rounded-full bg-[#dbe3d9]/10 p-3 ring-1 ring-white/15 shadow-2xl transition-transform duration-100 ${moriSpeaking && speechBeat ? "scale-[1.015] -translate-y-0.5" : "scale-100"}`}>
                 <img
                   src="/images/mori-companion.png"
                   alt="Mori, your AI companion"
                   className="h-48 w-48 rounded-full object-cover sm:h-60 sm:w-60 md:h-72 md:w-72"
                 />
+                {moriSpeaking && (
+                  <span aria-hidden="true" className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-end gap-1 rounded-full bg-[#18221d]/80 px-3 py-2 shadow-lg backdrop-blur-sm">
+                    <span className={`w-1 rounded-full bg-[#dbe3d9] transition-all ${speechBeat ? "h-4" : "h-2"}`} />
+                    <span className={`w-1 rounded-full bg-[#dbe3d9] transition-all ${speechBeat ? "h-2" : "h-5"}`} />
+                    <span className={`w-1 rounded-full bg-[#dbe3d9] transition-all ${speechBeat ? "h-5" : "h-3"}`} />
+                  </span>
+                )}
               </div>
               <h1 className="font-serif text-3xl text-[#eef3eb] md:text-4xl">
                 A little time together
