@@ -9,11 +9,16 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { User } from "@supabase/supabase-js";
+import {
+  type AccountRelationship,
+  isAccountRelationship,
+} from "@/lib/auth/account-role";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   userName: string | null;
   userId: string | null;
+  accountRelationship: AccountRelationship | null;
   selectPatient: (id: string) => void;
   login: (
     email: string,
@@ -23,6 +28,10 @@ interface AuthContextType {
     email: string,
     password: string,
     name: string,
+    relationship: AccountRelationship,
+  ) => Promise<{ ok: boolean; error?: string; requiresEmailConfirmation?: boolean }>;
+  chooseRelationship: (
+    relationship: AccountRelationship,
   ) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
   enterDemo: (code: string) => Promise<{ ok: boolean; error?: string }>;
@@ -73,7 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSelectedPatient(null);
       window.localStorage.removeItem("mori_demo_mode");
       window.localStorage.removeItem("mori_selected_patient");
-      router.push("/room");
+      const relationship = data.user.user_metadata?.relationship_to_mori;
+      router.push(isAccountRelationship(relationship) ? "/room" : "/onboarding");
       return { ok: true };
     }
     return { ok: false, error: "Sign in failed" };
@@ -83,24 +93,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
     name: string,
-  ): Promise<{ ok: boolean; error?: string }> => {
+    relationship: AccountRelationship,
+  ): Promise<{ ok: boolean; error?: string; requiresEmailConfirmation?: boolean }> => {
     const response = await fetch('/api/auth/signup', {
       method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify({ email, password, name, relationship }),
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) return { ok: false, error: data.error || 'Account creation failed' };
-    if (data.requiresEmailConfirmation) return { ok: false, error: 'Check your email to confirm your account, then sign in.' };
+    if (data.requiresEmailConfirmation)
+      return { ok: true, requiresEmailConfirmation: true };
     if (data.user) {
       setUser(data.user);
       setDemoMode(false);
       setSelectedPatient(null);
       window.localStorage.removeItem("mori_demo_mode");
       window.localStorage.removeItem("mori_selected_patient");
-      router.push("/room");
+      router.push("/room/profile");
       return { ok: true };
     }
     return { ok: false, error: "Sign up failed" };
+  };
+
+  const chooseRelationship = async (relationship: AccountRelationship) => {
+    const response = await fetch("/api/auth/onboarding", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ relationship }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok)
+      return { ok: false, error: data.error || "Could not save your choice" };
+    setUser(data.user);
+    router.push("/room/profile");
+    return { ok: true };
   };
 
   const logout = async () => {
@@ -149,6 +176,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ? "demo_patient"
     : (selectedPatient ?? user?.id ?? null);
   const isAuthenticated = !!user || demoMode;
+  const relationshipValue = user?.user_metadata?.relationship_to_mori;
+  const accountRelationship = isAccountRelationship(relationshipValue)
+    ? relationshipValue
+    : null;
 
   return (
     <AuthContext.Provider
@@ -156,9 +187,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated,
         userName,
         userId,
+        accountRelationship,
         selectPatient,
         login,
         signup,
+        chooseRelationship,
         logout,
         enterDemo,
         authorizedFetch,

@@ -2,6 +2,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import type { TherapyResponse } from "@/lib/therapy/types";
+import {
+  mergeVoiceTranscript,
+  type MoriViseme,
+  visemeSequenceForText,
+  voicePauseDelayMs,
+} from "@/lib/therapy/turn-taking";
 interface Props {
   sessionId: string;
   onClose: () => void;
@@ -30,8 +36,11 @@ export default function TherapyInterface({
   const [paused, setPaused] = useState(false);
   const [closed, setClosed] = useState(false);
   const [voice, setVoice] = useState(false);
+  const [voiceDraft, setVoiceDraft] = useState("");
+  const [waitingForTurn, setWaitingForTurn] = useState(false);
   const [moriSpeaking, setMoriSpeaking] = useState(false);
   const [speechBeat, setSpeechBeat] = useState(false);
+  const [moriViseme, setMoriViseme] = useState<MoriViseme>("rest");
   const [mediaPlaying, setMediaPlaying] = useState(false);
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
@@ -57,7 +66,11 @@ export default function TherapyInterface({
   const pausedRef = useRef(false);
   const sendRef = useRef<(text: string) => Promise<void>>(async () => {});
   const restart = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const turnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const voiceDraftRef = useRef("");
+  const lastVoiceActivity = useRef(0);
   const speechAnimation = useRef<ReturnType<typeof setInterval> | null>(null);
+  const visemeTimers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   const latestSpeech = useRef<{ text: string; at: number }>({
     text: "",
     at: 0,
@@ -67,6 +80,40 @@ export default function TherapyInterface({
   const finishButton = useRef<HTMLButtonElement | null>(null);
   const endDialog = useRef<HTMLElement | null>(null);
   const requestAbort = useRef<AbortController | null>(null);
+  const resetVisemes = useCallback(() => {
+    visemeTimers.current.forEach(clearTimeout);
+    visemeTimers.current = [];
+    if (mounted.current) setMoriViseme("rest");
+  }, []);
+  const animateWord = useCallback(
+    (word: string) => {
+      resetVisemes();
+      const sequence = visemeSequenceForText(word);
+      sequence.forEach((viseme, index) => {
+        visemeTimers.current.push(
+          setTimeout(() => {
+            if (mounted.current) setMoriViseme(viseme);
+          }, index * 85),
+        );
+      });
+      visemeTimers.current.push(
+        setTimeout(() => {
+          if (mounted.current) setMoriViseme("rest");
+        }, sequence.length * 85 + 70),
+      );
+    },
+    [resetVisemes],
+  );
+  const clearTurnTimer = useCallback(() => {
+    if (turnTimer.current) clearTimeout(turnTimer.current);
+    turnTimer.current = null;
+    setWaitingForTurn(false);
+  }, []);
+  const clearVoiceDraft = useCallback(() => {
+    clearTurnTimer();
+    voiceDraftRef.current = "";
+    setVoiceDraft("");
+  }, [clearTurnTimer]);
   const startListening = useCallback(() => {
     if (
       active.current &&
@@ -84,7 +131,9 @@ export default function TherapyInterface({
   }, []);
   const stopAudio = () => {
     if (restart.current) clearTimeout(restart.current);
+    clearVoiceDraft();
     if (speechAnimation.current) clearInterval(speechAnimation.current);
+    resetVisemes();
     speechAnimation.current = null;
     setSpeechBeat(false);
     recognition.current?.abort();
@@ -114,11 +163,16 @@ export default function TherapyInterface({
       () => setSpeechBeat((current) => !current),
       180,
     );
-    utterance.onboundary = () => setSpeechBeat((current) => !current);
+    utterance.onboundary = (event) => {
+      setSpeechBeat((current) => !current);
+      const remaining = text.slice(event.charIndex);
+      animateWord(remaining.match(/[A-Za-z']+/)?.[0] ?? remaining.slice(0, 4));
+    };
     utterance.onend = utterance.onerror = () => {
       if (speechAnimation.current) clearInterval(speechAnimation.current);
       speechAnimation.current = null;
       setSpeechBeat(false);
+      resetVisemes();
       speaking.current = false;
       setMoriSpeaking(false);
       if (mounted.current) restart.current = setTimeout(startListening, 500);
@@ -133,6 +187,7 @@ export default function TherapyInterface({
     setBusy(true);
     setError("");
     setFailedText("");
+    clearVoiceDraft();
     recognition.current?.abort();
     setTurns((t) => [...t, { who: "You", text }]);
     try {
@@ -211,6 +266,32 @@ export default function TherapyInterface({
     }
   };
   sendRef.current = send;
+  const finishVoiceTurn = useCallback(() => {
+    const text = voiceDraftRef.current.trim();
+    if (!text || processing.current || pausedRef.current || !active.current)
+      return;
+    clearVoiceDraft();
+    sendRef.current(text);
+  }, [clearVoiceDraft]);
+  const scheduleVoiceTurn = useCallback(
+    (text: string) => {
+      clearTurnTimer();
+      const delay = voicePauseDelayMs(text);
+      const scheduledAt = Date.now();
+      lastVoiceActivity.current = scheduledAt;
+      setWaitingForTurn(true);
+      turnTimer.current = setTimeout(() => {
+        const remaining =
+          delay - (Date.now() - Math.max(scheduledAt, lastVoiceActivity.current));
+        if (remaining > 50) {
+          turnTimer.current = setTimeout(finishVoiceTurn, remaining);
+          return;
+        }
+        finishVoiceTurn();
+      }, delay);
+    },
+    [clearTurnTimer, finishVoiceTurn],
+  );
   useEffect(() => {
     mounted.current = true;
     active.current = true;
@@ -221,9 +302,13 @@ export default function TherapyInterface({
       const r = new Constructor();
       recognition.current = r;
       r.continuous = false;
-      r.interimResults = false;
+      r.interimResults = true;
       r.lang = language;
       r.onstart = () => setListening(true);
+      r.onspeechstart = () => {
+        lastVoiceActivity.current = Date.now();
+        clearTurnTimer();
+      };
       r.onend = () => {
         if (!mounted.current) return;
         setListening(false);
@@ -232,7 +317,23 @@ export default function TherapyInterface({
       };
       r.onresult = (event: any) => {
         if (processing.current || speaking.current || pausedRef.current) return;
-        const text = event.results[event.resultIndex]?.[0]?.transcript ?? "";
+        let interim = "";
+        let finalText = "";
+        for (let index = event.resultIndex; index < event.results.length; index++) {
+          const result = event.results[index];
+          const transcript = result?.[0]?.transcript ?? "";
+          if (result.isFinal) finalText += ` ${transcript}`;
+          else interim += ` ${transcript}`;
+        }
+        lastVoiceActivity.current = Date.now();
+        clearTurnTimer();
+        if (interim.trim()) {
+          setVoiceDraft(
+            mergeVoiceTranscript(voiceDraftRef.current, interim.trim()),
+          );
+        }
+        const text = finalText.trim();
+        if (!text) return;
         const now = Date.now();
         if (
           text === latestSpeech.current.text &&
@@ -240,7 +341,10 @@ export default function TherapyInterface({
         )
           return;
         latestSpeech.current = { text, at: now };
-        sendRef.current(text);
+        const combined = mergeVoiceTranscript(voiceDraftRef.current, text);
+        voiceDraftRef.current = combined;
+        setVoiceDraft(combined);
+        scheduleVoiceTurn(combined);
       };
       r.onerror = (event: any) => {
         if (["aborted", "no-speech"].includes(event.error)) return;
@@ -265,16 +369,19 @@ export default function TherapyInterface({
       mounted.current = false;
       active.current = false;
       if (restart.current) clearTimeout(restart.current);
+      if (turnTimer.current) clearTimeout(turnTimer.current);
       if (speechAnimation.current) clearInterval(speechAnimation.current);
+      resetVisemes();
       if (recognition.current) {
         recognition.current.onend = null;
         recognition.current.onresult = null;
+        recognition.current.onspeechstart = null;
         recognition.current.abort();
       }
       window.speechSynthesis?.cancel();
       requestAbort.current?.abort();
     };
-  }, [language, startListening]);
+  }, [clearTurnTimer, language, resetVisemes, scheduleVoiceTurn, startListening]);
   const toggleVoice = () => {
     if (!audioAllowed) {
       setError("Voice is turned off in the family profile.");
@@ -300,6 +407,7 @@ export default function TherapyInterface({
   const stopMoriSpeaking = () => {
     window.speechSynthesis?.cancel();
     if (speechAnimation.current) clearInterval(speechAnimation.current);
+    resetVisemes();
     speechAnimation.current = null;
     setSpeechBeat(false);
     speaking.current = false;
@@ -394,6 +502,8 @@ export default function TherapyInterface({
           ? "Memory playing"
         : moriSpeaking
           ? "Mori is speaking"
+        : waitingForTurn
+          ? "Still listening — take your time"
         : listening
           ? "Mori is listening"
           : voice
@@ -473,11 +583,28 @@ export default function TherapyInterface({
           ) : (
             <div className="relative z-10 text-center">
               <div className={`relative mx-auto mb-7 w-fit rounded-full bg-[#dbe3d9]/10 p-3 ring-1 ring-white/15 shadow-2xl transition-transform duration-100 ${moriSpeaking && speechBeat ? "scale-[1.015] -translate-y-0.5" : "scale-100"}`}>
-                <img
-                  src="/images/mori-companion.png"
-                  alt="Mori, your AI companion"
-                  className="h-48 w-48 rounded-full object-cover sm:h-60 sm:w-60 md:h-72 md:w-72"
-                />
+                <div className="relative h-48 w-48 overflow-hidden rounded-full sm:h-60 sm:w-60 md:h-72 md:w-72">
+                  <img
+                    src="/images/mori-companion.png"
+                    alt="Mori, your AI companion"
+                    className="h-full w-full object-cover"
+                  />
+                  {moriSpeaking && moriViseme !== "rest" && (
+                    <span
+                      aria-hidden="true"
+                      data-viseme={moriViseme}
+                      className={`absolute left-[49%] top-[49%] -translate-x-1/2 -translate-y-1/2 shadow-[0_1px_1px_rgba(42,20,18,0.25)] motion-reduce:hidden ${
+                        moriViseme === "round"
+                          ? "h-[5.2%] w-[4.2%] rounded-[50%] border border-[#9b6263] bg-[#4b2927]"
+                          : moriViseme === "wide"
+                            ? "h-[3.1%] w-[11.2%] rounded-[48%] border border-[#a46a6c] bg-[#603331]"
+                            : moriViseme === "teeth"
+                              ? "h-[3.2%] w-[9.4%] rounded-[45%] border border-[#9d6668] bg-[linear-gradient(to_bottom,#eee5dc_0_44%,#59302e_45%_100%)]"
+                              : "h-[4.8%] w-[8.8%] rounded-[48%] border border-[#9e6668] bg-[#4d2927]"
+                      }`}
+                    />
+                  )}
+                </div>
                 {moriSpeaking && (
                   <span aria-hidden="true" className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-end gap-1 rounded-full bg-[#18221d]/80 px-3 py-2 shadow-lg backdrop-blur-sm">
                     <span className={`w-1 rounded-full bg-[#dbe3d9] transition-all ${speechBeat ? "h-4" : "h-2"}`} />
@@ -582,6 +709,17 @@ export default function TherapyInterface({
               <p>Mori is taking a moment to respond…</p>
             </div>
           )}
+          {voiceDraft && !busy && (
+            <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
+              <p className="font-semibold text-primary">
+                {waitingForTurn ? "Still listening…" : "I heard you"}
+              </p>
+              <p className="mt-1 leading-relaxed text-text/75">{voiceDraft}</p>
+              <p className="mt-2 text-sm text-text/55">
+                Take all the time you need. Mori will wait if you continue speaking.
+              </p>
+            </div>
+          )}
           {closed && (
             <div className="rounded-2xl bg-primary/10 p-4">
               <p className="font-semibold text-primary">A moment shared</p>
@@ -605,6 +743,15 @@ export default function TherapyInterface({
                 </button>
               )}
             </div>
+          )}
+          {voiceDraft && !busy && !paused && !closed && (
+            <button
+              type="button"
+              onClick={finishVoiceTurn}
+              className="min-h-12 w-full rounded-2xl border border-primary/25 bg-white px-5 py-3 text-base font-semibold text-primary shadow-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+            >
+              I’m finished speaking
+            </button>
           )}
           {closed ? (
             <button onClick={onClose} className="min-h-14 w-full rounded-2xl bg-primary px-5 py-3 text-lg font-semibold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30">

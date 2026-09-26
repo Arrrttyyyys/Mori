@@ -2,13 +2,16 @@
 
 import { useState, FormEvent } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { ACCOUNT_RELATIONSHIPS, type AccountRelationship } from '@/lib/auth/account-role'
 
 export default function Auth() {
   const [isSignIn, setIsSignIn] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [relationship, setRelationship] = useState<AccountRelationship | ''>('')
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [demoCode, setDemoCode] = useState('')
   const [demoSubmitting, setDemoSubmitting] = useState(false)
@@ -17,6 +20,7 @@ export default function Auth() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
+    setNotice('')
     setSubmitting(true)
 
     try {
@@ -31,9 +35,16 @@ export default function Auth() {
           setSubmitting(false)
           return
         }
-        const result = await signup(email, password, name)
+        if (!relationship) {
+          setError('Please choose what brings you to Mori.')
+          setSubmitting(false)
+          return
+        }
+        const result = await signup(email, password, name, relationship)
         if (!result.ok) {
           setError(result.error ?? 'Unable to create account. Please try again.')
+        } else if (result.requiresEmailConfirmation) {
+          setNotice(`We sent a confirmation link to ${email}. Open that email to continue setting up Mori.`)
         }
       }
     } finally {
@@ -91,9 +102,43 @@ export default function Auth() {
                 {error}
               </div>
             )}
+            {notice && (
+              <div role="status" className="rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-lg leading-relaxed text-text">
+                {notice}
+              </div>
+            )}
 
             {!isSignIn && (
-              <div>
+              <div className="space-y-6">
+                <fieldset>
+                  <legend className="mb-3 text-lg font-medium text-text">
+                    What brings you to Mori?
+                  </legend>
+                  <div className="space-y-3">
+                    {ACCOUNT_RELATIONSHIPS.map((option) => (
+                      <label
+                        key={option.value}
+                        className={`block cursor-pointer rounded-xl border-2 p-4 transition ${relationship === option.value ? 'border-primary bg-primary/5' : 'border-secondary/60'}`}
+                      >
+                        <span className="flex items-start gap-3">
+                          <input
+                            type="radio"
+                            name="relationship"
+                            value={option.value}
+                            checked={relationship === option.value}
+                            onChange={() => setRelationship(option.value)}
+                            className="mt-1 h-5 w-5 accent-primary"
+                          />
+                          <span>
+                            <span className="block font-semibold text-text">{option.title}</span>
+                            <span className="mt-1 block text-sm leading-relaxed text-text/65">{option.description}</span>
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                <div>
                 <label
                   htmlFor="name"
                   className="block text-text font-medium mb-2 text-lg"
@@ -109,6 +154,7 @@ export default function Auth() {
                   className="w-full px-4 py-3 rounded-xl border border-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-500 text-lg"
                   placeholder="Your name"
                 />
+                </div>
               </div>
             )}
 
