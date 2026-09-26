@@ -244,8 +244,14 @@ export default function Library() {
           className="hidden"
           onChange={(e) => {
             const chosen = Array.from(e.target.files ?? []);
-            if (chosen.some((f) => f.size > 50 * 1024 * 1024)) {
-              setError("Please choose files smaller than 50 MB.");
+            if (files.length + chosen.length > 10) {
+              setError("You can upload up to 10 files at a time.");
+              e.target.value = "";
+              return;
+            }
+            if (chosen.some((f) => f.size > (f.type.startsWith("image/") ? 15 : 50) * 1024 * 1024)) {
+              setError("Images must be under 15 MB; audio and video must be under 50 MB.");
+              e.target.value = "";
               return;
             }
             setFiles((current) => [

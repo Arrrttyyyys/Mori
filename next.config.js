@@ -9,8 +9,12 @@ const contentSecurityPolicy = [
   "media-src 'self' blob: https://*.supabase.co",
   `connect-src 'self' https://*.supabase.co${isProduction ? '' : ' ws://localhost:* http://localhost:*'}`,
   `script-src 'self' 'unsafe-inline'${isProduction ? '' : " 'unsafe-eval'"}`,
+  "script-src-attr 'none'",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
+  "frame-src 'none'",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
   ...(isProduction ? ['upgrade-insecure-requests'] : []),
 ].join('; ')
 

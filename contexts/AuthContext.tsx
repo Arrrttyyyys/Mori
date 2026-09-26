@@ -29,6 +29,8 @@ interface AuthContextType {
     password: string,
     name: string,
     relationship: AccountRelationship,
+    acceptTerms: boolean,
+    acceptPrivacy: boolean,
   ) => Promise<{ ok: boolean; error?: string; requiresEmailConfirmation?: boolean }>;
   chooseRelationship: (
     relationship: AccountRelationship,
@@ -94,10 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
     name: string,
     relationship: AccountRelationship,
+    acceptTerms: boolean,
+    acceptPrivacy: boolean,
   ): Promise<{ ok: boolean; error?: string; requiresEmailConfirmation?: boolean }> => {
     const response = await fetch('/api/auth/signup', {
       method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email, password, name, relationship }),
+      body: JSON.stringify({ email, password, name, relationship, acceptTerms, acceptPrivacy }),
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) return { ok: false, error: data.error || 'Account creation failed' };

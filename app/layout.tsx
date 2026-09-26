@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import LayoutWrapper from '@/components/LayoutWrapper'
+import CookieNotice from '@/components/CookieNotice'
 
 export const metadata: Metadata = {
   title: 'Mori - A gentle place for memories',
@@ -18,6 +19,7 @@ export default function RootLayout({
       <body className="font-serif bg-background text-text antialiased">
         <AuthProvider>
           <LayoutWrapper>{children}</LayoutWrapper>
+          <CookieNotice />
         </AuthProvider>
       </body>
     </html>

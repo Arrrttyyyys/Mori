@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ACCOUNT_RELATIONSHIPS, type AccountRelationship } from '@/lib/auth/account-role'
+import Link from 'next/link'
 
 export default function Auth() {
   const [isSignIn, setIsSignIn] = useState(true)
@@ -10,6 +11,8 @@ export default function Auth() {
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [relationship, setRelationship] = useState<AccountRelationship | ''>('')
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -40,7 +43,12 @@ export default function Auth() {
           setSubmitting(false)
           return
         }
-        const result = await signup(email, password, name, relationship)
+        if (!acceptTerms || !acceptPrivacy) {
+          setError('Please accept the Terms and Privacy Policy.')
+          setSubmitting(false)
+          return
+        }
+        const result = await signup(email, password, name, relationship, acceptTerms, acceptPrivacy)
         if (!result.ok) {
           setError(result.error ?? 'Unable to create account. Please try again.')
         } else if (result.requiresEmailConfirmation) {
@@ -176,6 +184,14 @@ export default function Auth() {
                 placeholder="your.email@example.com"
               />
             </div>
+
+            {!isSignIn && (
+              <fieldset className="space-y-3 rounded-xl border border-secondary/60 p-4">
+                <legend className="px-1 font-medium text-text">Policies</legend>
+                <label className="flex items-start gap-3 text-sm leading-relaxed"><input required type="checkbox" checked={acceptTerms} onChange={(event) => setAcceptTerms(event.target.checked)} className="mt-1 h-5 w-5 accent-primary"/><span>I agree to Mori’s <Link className="text-primary underline" href="/terms" target="_blank">Terms and Conditions</Link>.</span></label>
+                <label className="flex items-start gap-3 text-sm leading-relaxed"><input required type="checkbox" checked={acceptPrivacy} onChange={(event) => setAcceptPrivacy(event.target.checked)} className="mt-1 h-5 w-5 accent-primary"/><span>I acknowledge Mori’s <Link className="text-primary underline" href="/privacy" target="_blank">Privacy Policy</Link>.</span></label>
+              </fieldset>
+            )}
 
             <div>
               <label
