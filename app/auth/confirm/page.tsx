@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function ConfirmEmailPage() {
+  const started = useRef(false);
   const [message, setMessage] = useState("Confirming your email…");
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (started.current) return;
+    started.current = true;
     const values = new URLSearchParams(window.location.hash.slice(1));
     const errorDescription = values.get("error_description");
     const accessToken = values.get("access_token");

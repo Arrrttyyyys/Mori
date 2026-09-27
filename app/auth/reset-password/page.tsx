@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useEffect, useRef, useState } from 'react'
 
 export default function ResetPasswordPage() {
+  const started = useRef(false)
   const [ready, setReady] = useState(false)
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -11,6 +12,8 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   useEffect(() => {
+    if (started.current) return
+    started.current = true
     const values = new URLSearchParams(window.location.hash.slice(1))
     const body = { accessToken: values.get('access_token'), refreshToken: values.get('refresh_token'), type: values.get('type') }
     const linkError = values.get('error_description')
