@@ -106,11 +106,17 @@ export default function RoomWelcome() {
           ))}
         </div>
 
-        {/* Sign Out */}
-        <div className="text-center">
+        {/* Main website and account actions */}
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-lg">
+          <Link
+            href="/"
+            className="text-primary hover:opacity-75 transition-opacity duration-500"
+          >
+            ← Back to main website
+          </Link>
           <button
             onClick={logout}
-            className="text-text/60 hover:text-text transition-colors duration-500 text-lg"
+            className="text-text/60 hover:text-text transition-colors duration-500"
           >
             Sign out
           </button>
