@@ -204,6 +204,8 @@ export default function Auth() {
                 type="password"
                 id="password"
                 name="password"
+                minLength={isSignIn ? undefined : 12}
+                maxLength={128}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-500 text-lg"
@@ -214,7 +216,7 @@ export default function Auth() {
             {isSignIn && (
               <div className="flex justify-end">
                 <a
-                  href="#"
+                  href="/auth/forgot-password"
                   className="text-primary hover:opacity-80 transition-opacity duration-500 text-lg"
                 >
                   Forgot password?

@@ -12,7 +12,9 @@ In **Authentication → URL Configuration**:
    `https://your-project.vercel.app`.
 2. Add these redirect URLs:
    - `http://localhost:3000/auth/confirm`
+   - `http://localhost:3000/auth/reset-password`
    - `https://your-project.vercel.app/auth/confirm`
+   - `https://your-project.vercel.app/auth/reset-password`
    - Any intentional preview-domain pattern used during testing.
 
 Mori passes the current application origin as `emailRedirectTo`, so Supabase
@@ -45,6 +47,19 @@ environment variables.
 3. Do not enable click tracking for authentication emails because rewriting the
    confirmation URL can break verification.
 
+4. In **Authentication → Email Templates → Reset password**, keep the action
+   connected to `{{ .ConfirmationURL }}`. Suggested copy:
+
+   - Subject: `Reset your Mori password`
+   - Heading: `Choose a new password`
+   - Body: `Use the button below to choose a new Mori password. If you did not request this, you can ignore this email.`
+   - Button: `Reset password`
+
+Mori always returns the same reset-request message whether or not an account
+exists for an email address. Login, signup, confirmation, recovery-email, and
+password-update attempts use database-backed limits. The stored limit keys are
+HMAC hashes, not email addresses or raw client network addresses.
+
 ## Verification
 
 Test with a disposable address before launch:
@@ -57,6 +72,9 @@ Test with a disposable address before launch:
 5. Confirm that refreshing the profile page remains authenticated.
 6. Check **Authentication → Users** for a confirmation timestamp and inspect
    **Logs → Auth Logs** for delivery errors.
+7. From the sign-in screen, request a password reset. Confirm that the email
+   opens `/auth/reset-password`, accepts a 12–128 character password, signs out
+   the recovery session, and allows a fresh sign-in with the new password.
 
 The relationship selected during signup is descriptive metadata only. It does
 not grant access to another person’s workspace, pilot controls, or professional

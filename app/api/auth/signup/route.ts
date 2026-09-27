@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { setAuthCookies } from '@/lib/auth/cookies'
 import { isAccountRelationship } from '@/lib/auth/account-role'
 import { createAdminServerClient } from '@/lib/supabase/server'
+import { consumeAuthQuota } from '@/lib/auth/rate-limit'
 
 const TERMS_VERSION = '2026-09-25'
 const PRIVACY_VERSION = '2026-09-25'
@@ -11,7 +12,11 @@ export async function POST(request: NextRequest) {
   if (request.headers.get('origin') !== request.nextUrl.origin) return NextResponse.json({ error: 'Request origin could not be verified' }, { status: 403 })
   const body = await request.json().catch(() => ({}))
   if (typeof body.email !== 'string' || typeof body.password !== 'string' || typeof body.name !== 'string' || !body.name.trim() || !isAccountRelationship(body.relationship)) return NextResponse.json({ error: 'Name, email, password, and your relationship to Mori are required' }, { status: 400 })
+  if (body.password.length < 12 || body.password.length > 128) return NextResponse.json({ error: 'Use a password between 12 and 128 characters' }, { status: 400 })
   if (body.acceptTerms !== true || body.acceptPrivacy !== true) return NextResponse.json({ error: 'Accept the Terms and Privacy Policy to create an account' }, { status: 400 })
+  const quota = await consumeAuthQuota(request, 'signup', body.email).catch(() => null)
+  if (!quota) return NextResponse.json({ error: 'Account protection is unavailable' }, { status: 503 })
+  if (!quota.allowed) return NextResponse.json({ error: 'Too many account requests. Please wait and try again.' }, { status: 429, headers: { 'Retry-After': String(quota.retryAfter) } })
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!url || !key) return NextResponse.json({ error: 'Authentication is not configured' }, { status: 503 })

@@ -20,6 +20,7 @@ const apiFiles = [
   'app/api/pilot/[userId]/route.ts',
   'app/api/pilot/[userId]/sessions/[sessionId]/route.ts',
   'app/api/storage/memories/route.ts',
+  'app/api/auth/password/update/route.ts',
 ]
 
 for (const file of apiFiles) {
@@ -81,6 +82,20 @@ assert.match(signupRoute, /legal_acceptances/, 'signup must persist policy versi
 const nextConfig = read('next.config.js')
 assert.match(nextConfig, /Content-Security-Policy/, 'responses must include a content security policy')
 assert.match(nextConfig, /script-src-attr 'none'/, 'inline event-handler scripts must be blocked')
+
+const authRateLimits = read('lib/auth/rate-limit.ts')
+for (const action of ['login', 'signup', 'confirm', 'recovery_request', 'password_update']) {
+  assert.match(authRateLimits, new RegExp(`${action}:`), `${action} must have a persistent rate-limit policy`)
+}
+const authRateMigration = read('supabase/migrations/202609260001_auth_rate_limits.sql')
+assert.match(authRateMigration, /consume_mori_auth_quota/, 'authentication limits must be atomic in the database')
+assert.match(authRateMigration, /enable row level security/, 'authentication usage windows must not be browser-readable')
+const passwordRequest = read('app/api/auth/password/request/route.ts')
+assert.match(passwordRequest, /genericMessage/, 'password recovery must not reveal whether an account exists')
+assert.doesNotMatch(passwordRequest, /return NextResponse\.json\(\{ error: error/, 'password recovery must not expose provider account errors')
+const passwordUpdate = read('app/api/auth/password/update/route.ts')
+assert.match(passwordUpdate, /password\.length < 12/, 'new passwords must meet the application minimum length')
+assert.match(passwordUpdate, /clearAuthCookies/, 'password changes must clear the recovery session')
 
 const therapyRoute = read('app/api/therapy/session/route.ts')
 assert.doesNotMatch(therapyRoute, /details: error instanceof Error/, 'API errors must not expose internal details')

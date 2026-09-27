@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { setAuthCookies } from '@/lib/auth/cookies'
+import { consumeAuthQuota } from '@/lib/auth/rate-limit'
 
 export async function POST(request: NextRequest) {
   if (request.headers.get('origin') !== request.nextUrl.origin) return NextResponse.json({ error: 'Request origin could not be verified' }, { status: 403 })
   const body = await request.json().catch(() => ({}))
   if (typeof body.email !== 'string' || typeof body.password !== 'string') return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
+  const quota = await consumeAuthQuota(request, 'login', body.email).catch(() => null)
+  if (!quota) return NextResponse.json({ error: 'Authentication protection is unavailable' }, { status: 503 })
+  if (!quota.allowed) return NextResponse.json({ error: 'Too many sign-in attempts. Please wait and try again.' }, { status: 429, headers: { 'Retry-After': String(quota.retryAfter) } })
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!url || !key) return NextResponse.json({ error: 'Authentication is not configured' }, { status: 503 })

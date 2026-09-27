@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { setAuthCookies } from "@/lib/auth/cookies";
+import { consumeAuthQuota } from "@/lib/auth/rate-limit";
 
 export async function POST(request: NextRequest) {
   if (request.headers.get("origin") !== request.nextUrl.origin) {
@@ -10,6 +11,9 @@ export async function POST(request: NextRequest) {
     );
   }
   const body = await request.json().catch(() => ({}));
+  const quota = await consumeAuthQuota(request, "confirm").catch(() => null);
+  if (!quota) return NextResponse.json({ error: "Confirmation protection is unavailable" }, { status: 503 });
+  if (!quota.allowed) return NextResponse.json({ error: "Too many confirmation attempts. Please wait and try again." }, { status: 429, headers: { "Retry-After": String(quota.retryAfter) } });
   if (
     typeof body.accessToken !== "string" ||
     typeof body.refreshToken !== "string"
