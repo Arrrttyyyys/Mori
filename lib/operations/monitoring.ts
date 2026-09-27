@@ -61,7 +61,8 @@ export async function consumeDemoQuota(request: NextRequest, action: "access" | 
   const policies = {
     access: { seconds: 900, maximum: 10, daily: 30 },
     session: { seconds: 3600, maximum: 8, daily: 20 },
-    turn: { seconds: 60, maximum: 8, daily: Number(process.env.MORI_DEMO_DAILY_TURN_LIMIT || 60) },
+    // Previous default: Number(process.env.MORI_DEMO_DAILY_TURN_LIMIT || 60)
+    turn: { seconds: 60, maximum: 8, daily: Number(process.env.MORI_DEMO_DAILY_TURN_LIMIT || 40) },
     reset: { seconds: 3600, maximum: 4, daily: 8 },
   } as const;
   const policy = policies[action];

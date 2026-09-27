@@ -82,6 +82,13 @@ const uploadMigration = read('supabase/migrations/202609250002_upload_and_legal_
 assert.match(uploadMigration, /consume_mori_upload_quota/, 'upload rate limits must be atomic in the database')
 assert.match(uploadMigration, /legal_acceptances/, 'policy acceptance must have a durable audit record')
 
+const therapyBrain = read('lib/therapy/therapy-brain.ts')
+assert.match(therapyBrain, /api\.groq\.com\/openai\/v1\/chat\/completions/, 'Groq must use its server-side chat endpoint')
+assert.match(therapyBrain, /reasoning_effort: 'none'/, 'Mori must disable Qwen reasoning for conversational turns')
+assert.match(therapyBrain, /max_completion_tokens: 180/, 'hosted responses must have a small output-token budget')
+assert.match(therapyBrain, /\.slice\(-4\)/, 'hosted prompts must bound recent conversation history')
+assert.doesNotMatch(therapyBrain, /const userPrompt = `\$\{THERAPY_SYSTEM_PROMPT\}/, 'the system prompt must not be duplicated in the user prompt')
+
 const signupRoute = read('app/api/auth/signup/route.ts')
 assert.match(signupRoute, /acceptTerms !== true/, 'signup must require explicit terms acceptance')
 assert.match(signupRoute, /acceptPrivacy !== true/, 'signup must require explicit privacy acknowledgement')
