@@ -1,4 +1,5 @@
 export const MEMORIES_BUCKET = 'memories'
+const MAX_HOSTED_UPLOAD_BYTES = 4 * 1024 * 1024
 
 /**
  * Upload an image file to Supabase Storage under the user's folder.
@@ -8,7 +9,7 @@ export async function uploadMemoryPhoto(
   userId: string,
   file: File
 ): Promise<{ url: string; path: string } | null> {
-  if (file.size > 50 * 1024 * 1024 || !/^(image\/(jpeg|png|gif|webp)|audio\/(mpeg|wav|mp4)|video\/(mp4|webm))$/.test(file.type)) return null
+  if (file.size > MAX_HOSTED_UPLOAD_BYTES || !/^(image\/(jpeg|png|gif|webp)|audio\/(mpeg|wav|mp4)|video\/(mp4|webm))$/.test(file.type)) return null
   const form = new FormData()
   form.set('file', file)
   const response = await fetch('/api/storage/memories', { method: 'POST', body: form, credentials: 'same-origin' })

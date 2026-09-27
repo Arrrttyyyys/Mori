@@ -2,8 +2,8 @@ import "server-only";
 
 import sharp from "sharp";
 
-export const MAX_IMAGE_INPUT_BYTES = 15 * 1024 * 1024;
-export const MAX_MEDIA_INPUT_BYTES = 50 * 1024 * 1024;
+export const MAX_IMAGE_INPUT_BYTES = 4 * 1024 * 1024;
+export const MAX_MEDIA_INPUT_BYTES = 4 * 1024 * 1024;
 export const MAX_UPLOADS_PER_BATCH = 10;
 export const MAX_ACCOUNT_STORAGE_BYTES = 250 * 1024 * 1024;
 export const MAX_ACCOUNT_FILES = 500;
@@ -43,11 +43,11 @@ async function scanWithPrivateService(bytes: Buffer, file: File) {
 }
 
 export async function secureUpload(file: File): Promise<SafeUpload> {
-  if (file.size < 1 || file.size > MAX_MEDIA_INPUT_BYTES) throw new Error("Choose a supported file up to 50 MB");
+  if (file.size < 1 || file.size > MAX_MEDIA_INPUT_BYTES) throw new Error("Choose a supported file up to 4 MB");
   const input = Buffer.from(await file.arrayBuffer());
 
   if (file.type.startsWith("image/")) {
-    if (file.size > MAX_IMAGE_INPUT_BYTES) throw new Error("Images must be 15 MB or smaller");
+    if (file.size > MAX_IMAGE_INPUT_BYTES) throw new Error("Images must be 4 MB or smaller after compression");
     if (process.env.MORI_FILE_SCAN_URL) await scanWithPrivateService(input, file);
     try {
       const image = sharp(input, { failOn: "warning", limitInputPixels: 40_000_000, animated: false });

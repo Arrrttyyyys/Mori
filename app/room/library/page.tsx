@@ -7,6 +7,7 @@ import {
   uploadMemoryPhoto,
   deleteMemoryPhotoByPath,
 } from "@/lib/supabase/storage";
+import { prepareFileForUpload } from "@/lib/uploads/client";
 const blank = () => ({
   title: "",
   date: "",
@@ -242,21 +243,27 @@ export default function Library() {
           multiple
           accept="image/jpeg,image/png,image/webp,image/gif,audio/mpeg,audio/wav,audio/mp4,video/mp4,video/webm"
           className="hidden"
-          onChange={(e) => {
+          onChange={async (e) => {
             const chosen = Array.from(e.target.files ?? []);
+            e.target.value = "";
             if (files.length + chosen.length > 10) {
               setError("You can upload up to 10 files at a time.");
-              e.target.value = "";
               return;
             }
-            if (chosen.some((f) => f.size > (f.type.startsWith("image/") ? 15 : 50) * 1024 * 1024)) {
-              setError("Images must be under 15 MB; audio and video must be under 50 MB.");
-              e.target.value = "";
+            let prepared: File[];
+            try {
+              setBusy(true);
+              setError("");
+              prepared = await Promise.all(chosen.map(prepareFileForUpload));
+            } catch (error) {
+              setError(error instanceof Error ? error.message : "Could not prepare these files.");
               return;
+            } finally {
+              setBusy(false);
             }
             setFiles((current) => [
               ...current,
-              ...chosen.map((file) => ({
+              ...prepared.map((file) => ({
                 id: crypto.randomUUID(),
                 file,
                 title: "",
@@ -264,7 +271,6 @@ export default function Library() {
               })),
             ]);
             setOpen(true);
-            e.target.value = "";
           }}
         />
       </div>
