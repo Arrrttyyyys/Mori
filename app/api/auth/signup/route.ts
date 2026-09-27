@@ -4,12 +4,13 @@ import { setAuthCookies } from '@/lib/auth/cookies'
 import { isAccountRelationship } from '@/lib/auth/account-role'
 import { createAdminServerClient } from '@/lib/supabase/server'
 import { consumeAuthQuota } from '@/lib/auth/rate-limit'
+import { hasSameOrigin } from '@/lib/auth/request-origin'
 
 const TERMS_VERSION = '2026-09-25'
 const PRIVACY_VERSION = '2026-09-25'
 
 export async function POST(request: NextRequest) {
-  if (request.headers.get('origin') !== request.nextUrl.origin) return NextResponse.json({ error: 'Request origin could not be verified' }, { status: 403 })
+  if (!hasSameOrigin(request)) return NextResponse.json({ error: 'Request origin could not be verified' }, { status: 403 })
   const body = await request.json().catch(() => ({}))
   if (typeof body.email !== 'string' || typeof body.password !== 'string' || typeof body.name !== 'string' || !body.name.trim() || !isAccountRelationship(body.relationship)) return NextResponse.json({ error: 'Name, email, password, and your relationship to Mori are required' }, { status: 400 })
   if (body.password.length < 12 || body.password.length > 128) return NextResponse.json({ error: 'Use a password between 12 and 128 characters' }, { status: 400 })
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
         privacy_version: PRIVACY_VERSION,
         policies_accepted_at: new Date().toISOString(),
       },
-      emailRedirectTo: `${request.nextUrl.origin}/auth/confirm`,
+      emailRedirectTo: `${request.headers.get('origin')}/auth/confirm`,
     },
   })
   if (error || !data.user) return NextResponse.json({ error: error?.message || 'Account creation failed' }, { status: 400 })

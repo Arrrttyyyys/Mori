@@ -32,6 +32,10 @@ assert.match(auth, /requestedUserId !== data\.user\.id/, 'user-scoped routes mus
 assert.match(auth, /pilot_memberships/, 'care-team access must require an active role grant')
 assert.match(auth, /request\.cookies\.get\(ACCESS_COOKIE\)/, 'APIs must accept the server-managed access cookie')
 assert.match(auth, /Request origin could not be verified/, 'state-changing cookie requests must verify their origin')
+const requestOrigin = read('lib/auth/request-origin.ts')
+assert.match(requestOrigin, /originUrl\.host !== host/, 'same-origin checks must compare the browser origin with the receiving host')
+assert.match(requestOrigin, /originUrl\.protocol !== 'https:'/, 'production browser mutations must use HTTPS')
+assert.match(requestOrigin, /sec-fetch-site/, 'same-origin checks should reject cross-site browser metadata')
 assert.match(auth, /hasValidDemoAccess\(request\)/, 'a browser header alone must not authorize demo mode')
 
 const demoAccess = read('lib/operations/demo-access.ts')

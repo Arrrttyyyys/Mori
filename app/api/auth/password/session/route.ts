@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { setAuthCookies } from '@/lib/auth/cookies'
 import { consumeAuthQuota } from '@/lib/auth/rate-limit'
+import { hasSameOrigin } from '@/lib/auth/request-origin'
 
 export async function POST(request: NextRequest) {
-  if (request.headers.get('origin') !== request.nextUrl.origin) return NextResponse.json({ error: 'Request origin could not be verified' }, { status: 403 })
+  if (!hasSameOrigin(request)) return NextResponse.json({ error: 'Request origin could not be verified' }, { status: 403 })
   const quota = await consumeAuthQuota(request, 'confirm').catch(() => null)
   if (!quota) return NextResponse.json({ error: 'Password recovery is temporarily unavailable' }, { status: 503 })
   if (!quota.allowed) return NextResponse.json({ error: 'Too many link attempts. Please wait and try again.' }, { status: 429, headers: { 'Retry-After': String(quota.retryAfter) } })

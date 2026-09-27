@@ -6,6 +6,7 @@ import { PILOT_DEMO_ACCOUNT } from "@/lib/demo-account";
 import { createUserServerClient } from "@/lib/supabase/server";
 import { ACCESS_COOKIE } from "@/lib/auth/cookies";
 import { hasValidDemoAccess } from "@/lib/operations/demo-access";
+import { hasSameOrigin } from "@/lib/auth/request-origin";
 
 export type RequestIdentity =
   | {
@@ -35,8 +36,7 @@ export async function requireRequestIdentity(
   requestedUserId?: string,
 ): Promise<RequestIdentity> {
   if (!["GET", "HEAD", "OPTIONS"].includes(request.method) && !request.headers.has("authorization")) {
-    const origin = request.headers.get("origin");
-    if (!origin || origin !== request.nextUrl.origin)
+    if (!hasSameOrigin(request))
       throw new AuthError(403, "Request origin could not be verified");
   }
   if (request.headers.get("x-mori-demo-mode") === "true") {
