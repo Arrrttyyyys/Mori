@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import WaitlistForm from '@/components/WaitlistForm'
 
 export default function Home() {
   return (
@@ -23,6 +24,9 @@ export default function Home() {
           <p className="text-xl md:text-2xl text-text/80 mb-12 leading-relaxed max-w-2xl mx-auto">
             Preserve life stories, honor cherished moments, and create meaningful connections through the art of reminiscence.
           </p>
+          <a href="#waitlist" className="inline-flex rounded-full bg-primary px-8 py-3 text-lg font-medium text-white shadow-lg transition hover:opacity-90">
+            Join the waitlist
+          </a>
         </div>
       </section>
 
@@ -132,6 +136,20 @@ export default function Home() {
               Share your life story in your own time. A gentle companion that listens, remembers, and helps you preserve what matters most.
             </p>
           </Link>
+        </div>
+      </section>
+
+      {/* Waitlist Section */}
+      <section id="waitlist" className="scroll-mt-24 bg-primary/5 py-20">
+        <div className="mx-auto max-w-3xl px-6">
+          <div className="text-center">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-primary">Stay connected</p>
+            <h2 className="text-4xl font-semibold text-text md:text-5xl">Join the Mori waitlist</h2>
+            <p className="mx-auto mt-5 max-w-2xl text-xl leading-relaxed text-text/75">
+              Be among the first to hear about future access, family tools, and carefully supervised pilot opportunities.
+            </p>
+          </div>
+          <WaitlistForm />
         </div>
       </section>
 

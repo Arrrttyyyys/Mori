@@ -89,6 +89,15 @@ assert.match(therapyBrain, /max_completion_tokens: 180/, 'hosted responses must 
 assert.match(therapyBrain, /\.slice\(-4\)/, 'hosted prompts must bound recent conversation history')
 assert.doesNotMatch(therapyBrain, /const userPrompt = `\$\{THERAPY_SYSTEM_PROMPT\}/, 'the system prompt must not be duplicated in the user prompt')
 
+const waitlistRoute = read('app/api/waitlist/route.ts')
+assert.match(waitlistRoute, /hasSameOrigin\(request\)/, 'waitlist submissions must enforce same-origin requests')
+assert.match(waitlistRoute, /consume_mori_waitlist_quota/, 'waitlist submissions must be rate limited')
+assert.match(waitlistRoute, /body\.website/, 'waitlist submissions must include a bot honeypot')
+assert.match(waitlistRoute, /body\.consent/, 'waitlist submissions must require contact consent')
+const waitlistMigration = read('supabase/migrations/202609270001_waitlist.sql')
+assert.match(waitlistMigration, /alter table public\.waitlist_signups enable row level security/, 'waitlist records must be protected by RLS')
+assert.match(waitlistMigration, /email text not null unique/, 'waitlist email addresses must be duplicate-safe')
+
 const signupRoute = read('app/api/auth/signup/route.ts')
 assert.match(signupRoute, /acceptTerms !== true/, 'signup must require explicit terms acceptance')
 assert.match(signupRoute, /acceptPrivacy !== true/, 'signup must require explicit privacy acknowledgement')

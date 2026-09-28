@@ -14,6 +14,7 @@ export default function Header() {
     { href: '/for-families', label: 'For Families' },
     { href: '/for-caregivers', label: 'For Caregivers' },
     { href: '/research', label: 'Research' },
+    { href: '/#waitlist', label: 'Waitlist' },
   ]
 
   return (
