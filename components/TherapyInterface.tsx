@@ -2,10 +2,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import type { TherapyResponse } from "@/lib/therapy/types";
-import {
-  mergeVoiceTranscript,
-  voicePauseDelayMs,
-} from "@/lib/therapy/turn-taking";
 interface Props {
   sessionId: string;
   onClose: () => void;
@@ -34,8 +30,6 @@ export default function TherapyInterface({
   const [paused, setPaused] = useState(false);
   const [closed, setClosed] = useState(false);
   const [voice, setVoice] = useState(false);
-  const [voiceDraft, setVoiceDraft] = useState("");
-  const [waitingForTurn, setWaitingForTurn] = useState(false);
   const [moriSpeaking, setMoriSpeaking] = useState(false);
   const [speechBeat, setSpeechBeat] = useState(false);
   const [mediaPlaying, setMediaPlaying] = useState(false);
@@ -63,9 +57,6 @@ export default function TherapyInterface({
   const pausedRef = useRef(false);
   const sendRef = useRef<(text: string) => Promise<void>>(async () => {});
   const restart = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const turnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const voiceDraftRef = useRef("");
-  const lastVoiceActivity = useRef(0);
   const speechAnimation = useRef<ReturnType<typeof setInterval> | null>(null);
   const latestSpeech = useRef<{ text: string; at: number }>({
     text: "",
@@ -76,16 +67,6 @@ export default function TherapyInterface({
   const finishButton = useRef<HTMLButtonElement | null>(null);
   const endDialog = useRef<HTMLElement | null>(null);
   const requestAbort = useRef<AbortController | null>(null);
-  const clearTurnTimer = useCallback(() => {
-    if (turnTimer.current) clearTimeout(turnTimer.current);
-    turnTimer.current = null;
-    setWaitingForTurn(false);
-  }, []);
-  const clearVoiceDraft = useCallback(() => {
-    clearTurnTimer();
-    voiceDraftRef.current = "";
-    setVoiceDraft("");
-  }, [clearTurnTimer]);
   const startListening = useCallback(() => {
     if (
       active.current &&
@@ -103,7 +84,6 @@ export default function TherapyInterface({
   }, []);
   const stopAudio = () => {
     if (restart.current) clearTimeout(restart.current);
-    clearVoiceDraft();
     if (speechAnimation.current) clearInterval(speechAnimation.current);
     speechAnimation.current = null;
     setSpeechBeat(false);
@@ -155,7 +135,6 @@ export default function TherapyInterface({
     setBusy(true);
     setError("");
     setFailedText("");
-    clearVoiceDraft();
     recognition.current?.abort();
     setTurns((t) => [...t, { who: "You", text }]);
     try {
@@ -234,32 +213,6 @@ export default function TherapyInterface({
     }
   };
   sendRef.current = send;
-  const finishVoiceTurn = useCallback(() => {
-    const text = voiceDraftRef.current.trim();
-    if (!text || processing.current || pausedRef.current || !active.current)
-      return;
-    clearVoiceDraft();
-    sendRef.current(text);
-  }, [clearVoiceDraft]);
-  const scheduleVoiceTurn = useCallback(
-    (text: string) => {
-      clearTurnTimer();
-      const delay = voicePauseDelayMs(text);
-      const scheduledAt = Date.now();
-      lastVoiceActivity.current = scheduledAt;
-      setWaitingForTurn(true);
-      turnTimer.current = setTimeout(() => {
-        const remaining =
-          delay - (Date.now() - Math.max(scheduledAt, lastVoiceActivity.current));
-        if (remaining > 50) {
-          turnTimer.current = setTimeout(finishVoiceTurn, remaining);
-          return;
-        }
-        finishVoiceTurn();
-      }, delay);
-    },
-    [clearTurnTimer, finishVoiceTurn],
-  );
   useEffect(() => {
     mounted.current = true;
     active.current = true;
@@ -270,13 +223,9 @@ export default function TherapyInterface({
       const r = new Constructor();
       recognition.current = r;
       r.continuous = false;
-      r.interimResults = true;
+      r.interimResults = false;
       r.lang = language;
       r.onstart = () => setListening(true);
-      r.onspeechstart = () => {
-        lastVoiceActivity.current = Date.now();
-        clearTurnTimer();
-      };
       r.onend = () => {
         if (!mounted.current) return;
         setListening(false);
@@ -285,23 +234,7 @@ export default function TherapyInterface({
       };
       r.onresult = (event: any) => {
         if (processing.current || speaking.current || pausedRef.current) return;
-        let interim = "";
-        let finalText = "";
-        for (let index = event.resultIndex; index < event.results.length; index++) {
-          const result = event.results[index];
-          const transcript = result?.[0]?.transcript ?? "";
-          if (result.isFinal) finalText += ` ${transcript}`;
-          else interim += ` ${transcript}`;
-        }
-        lastVoiceActivity.current = Date.now();
-        clearTurnTimer();
-        if (interim.trim()) {
-          setVoiceDraft(
-            mergeVoiceTranscript(voiceDraftRef.current, interim.trim()),
-          );
-        }
-        const text = finalText.trim();
-        if (!text) return;
+        const text = event.results[event.resultIndex]?.[0]?.transcript ?? "";
         const now = Date.now();
         if (
           text === latestSpeech.current.text &&
@@ -309,10 +242,7 @@ export default function TherapyInterface({
         )
           return;
         latestSpeech.current = { text, at: now };
-        const combined = mergeVoiceTranscript(voiceDraftRef.current, text);
-        voiceDraftRef.current = combined;
-        setVoiceDraft(combined);
-        scheduleVoiceTurn(combined);
+        sendRef.current(text);
       };
       r.onerror = (event: any) => {
         if (["aborted", "no-speech"].includes(event.error)) return;
@@ -337,18 +267,16 @@ export default function TherapyInterface({
       mounted.current = false;
       active.current = false;
       if (restart.current) clearTimeout(restart.current);
-      if (turnTimer.current) clearTimeout(turnTimer.current);
       if (speechAnimation.current) clearInterval(speechAnimation.current);
       if (recognition.current) {
         recognition.current.onend = null;
         recognition.current.onresult = null;
-        recognition.current.onspeechstart = null;
         recognition.current.abort();
       }
       window.speechSynthesis?.cancel();
       requestAbort.current?.abort();
     };
-  }, [clearTurnTimer, language, scheduleVoiceTurn, startListening]);
+  }, [language, startListening]);
   const toggleVoice = () => {
     if (!audioAllowed) {
       setError("Voice is turned off in the family profile.");
@@ -468,8 +396,6 @@ export default function TherapyInterface({
           ? "Memory playing"
         : moriSpeaking
           ? "Mori is speaking"
-        : waitingForTurn
-          ? "Still listening — take your time"
         : listening
           ? "Mori is listening"
           : voice
@@ -664,17 +590,6 @@ export default function TherapyInterface({
               <p>Mori is taking a moment to respond…</p>
             </div>
           )}
-          {voiceDraft && !busy && (
-            <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4">
-              <p className="font-semibold text-primary">
-                {waitingForTurn ? "Still listening…" : "I heard you"}
-              </p>
-              <p className="mt-1 leading-relaxed text-text/75">{voiceDraft}</p>
-              <p className="mt-2 text-sm text-text/55">
-                Take all the time you need. Mori will wait if you continue speaking.
-              </p>
-            </div>
-          )}
           {closed && (
             <div className="rounded-2xl bg-primary/10 p-4">
               <p className="font-semibold text-primary">A moment shared</p>
@@ -698,15 +613,6 @@ export default function TherapyInterface({
                 </button>
               )}
             </div>
-          )}
-          {voiceDraft && !busy && !paused && !closed && (
-            <button
-              type="button"
-              onClick={finishVoiceTurn}
-              className="min-h-12 w-full rounded-2xl border border-primary/25 bg-white px-5 py-3 text-base font-semibold text-primary shadow-sm focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
-            >
-              I’m finished speaking
-            </button>
           )}
           {closed ? (
             <button onClick={onClose} className="min-h-14 w-full rounded-2xl bg-primary px-5 py-3 text-lg font-semibold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30">
