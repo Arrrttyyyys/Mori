@@ -1,167 +1,44 @@
-import Link from 'next/link'
 import Image from 'next/image'
+import Link from 'next/link'
 import WaitlistForm from '@/components/WaitlistForm'
 
+const audiences = [
+  { href: '/for-families', eyebrow: 'For families', title: 'Hold onto the stories behind the photographs', text: 'Gather familiar memories, invite unhurried conversation, and keep meaningful details together for the people you love.', icon: 'family' },
+  { href: '/for-caregivers', eyebrow: 'For caregivers', title: 'Create a gentler place to begin', text: 'Use family-approved context to support calm, person-led conversation without turning memory into a test.', icon: 'care' },
+  { href: '/how-it-works', eyebrow: 'For older adults', title: 'Share what matters, at your own pace', text: 'Speak, type, pause, change the subject, or finish at any time. The person always leads the moment.', icon: 'voice' },
+]
+
+function AudienceIcon({ kind }: { kind: string }) {
+  if (kind === 'family') return <svg viewBox="0 0 64 64" className="h-12 w-12" fill="none" aria-hidden="true"><path d="M15 46c2-8 8-12 17-12s15 4 17 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/><circle cx="32" cy="22" r="9" stroke="currentColor" strokeWidth="2.5"/><path d="M8 42c1-6 5-9 11-10M45 32c6 1 10 4 11 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/><circle cx="17" cy="23" r="6" stroke="currentColor" strokeWidth="2.5"/><circle cx="47" cy="23" r="6" stroke="currentColor" strokeWidth="2.5"/></svg>
+  if (kind === 'care') return <svg viewBox="0 0 64 64" className="h-12 w-12" fill="none" aria-hidden="true"><path d="M32 52S11 40 11 24c0-7 5-12 12-12 4 0 8 2 9 6 2-4 5-6 10-6 7 0 12 5 12 12 0 16-22 28-22 28Z" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round"/><path d="M24 31h16M32 23v16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/></svg>
+  return <svg viewBox="0 0 64 64" className="h-12 w-12" fill="none" aria-hidden="true"><rect x="24" y="9" width="16" height="30" rx="8" stroke="currentColor" strokeWidth="2.5"/><path d="M17 31c0 9 6 15 15 15s15-6 15-15M32 46v9M24 55h16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/></svg>
+}
+
 export default function Home() {
-  return (
-    <>
-      {/* Hero Section */}
-      <section className="relative min-h-[80vh] flex items-center justify-center bg-secondary/20">
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/P1.png"
-            alt="Family looking through photo albums"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/40 to-background/80" />
+  return <>
+    <section className="relative overflow-hidden border-b border-primary/10 bg-[#eee7da]">
+      <div className="absolute -left-28 top-24 h-72 w-72 rounded-full bg-[#d8c7b0]/35 blur-3xl" />
+      <div className="mx-auto grid min-h-[740px] max-w-7xl items-center gap-14 px-6 py-16 lg:grid-cols-[1.02fr_.98fr] lg:py-20">
+        <div className="relative z-10 max-w-2xl">
+          <p className="mb-6 text-sm font-semibold uppercase tracking-[0.24em] text-primary-dark">Memory, held with care</p>
+          <h1 className="text-5xl font-semibold leading-[1.02] tracking-[-0.035em] text-text sm:text-6xl lg:text-[5.4rem]">Every life holds stories worth hearing.</h1>
+          <p className="mt-7 max-w-xl text-xl leading-relaxed text-text/70">Mori creates a calm place for older adults and families to talk around familiar photographs, people, places, and moments—without pressure to remember perfectly.</p>
+          <div className="mt-10 flex flex-wrap gap-4"><a href="#waitlist" className="rounded-full bg-primary-dark px-7 py-3.5 text-lg font-medium text-white shadow-[0_12px_30px_rgba(72,88,72,.18)] transition hover:-translate-y-0.5 hover:bg-primary">Join the waitlist</a><Link href="/how-it-works" className="rounded-full border border-text/20 bg-white/55 px-7 py-3.5 text-lg font-medium text-text transition hover:bg-white">See how Mori works</Link></div>
+          <div className="mt-12 flex flex-wrap gap-x-7 gap-y-3 text-sm text-text/60">{['Person-led','Family-guided','Private by design'].map(x=><span key={x} className="flex items-center gap-2"><i className="h-1.5 w-1.5 rounded-full bg-primary" />{x}</span>)}</div>
         </div>
-        <div className="relative z-10 max-w-4xl mx-auto px-6 py-20 text-center">
-          <h1 className="text-5xl md:text-7xl font-semibold text-text mb-6 leading-tight">
-            A gentle place for memories
-          </h1>
-          <p className="text-xl md:text-2xl text-text/80 mb-12 leading-relaxed max-w-2xl mx-auto">
-            Preserve life stories, honor cherished moments, and create meaningful connections through the art of reminiscence.
-          </p>
-          <a href="#waitlist" className="inline-flex rounded-full bg-primary px-8 py-3 text-lg font-medium text-white shadow-lg transition hover:opacity-90">
-            Join the waitlist
-          </a>
+        <div className="relative mx-auto h-[520px] w-full max-w-[570px] lg:h-[610px]">
+          <div className="absolute inset-x-5 top-0 h-[540px] rotate-2 overflow-hidden rounded-[2.5rem] bg-white p-3 shadow-[0_30px_80px_rgba(61,53,40,.2)] lg:h-[590px]"><div className="relative h-full overflow-hidden rounded-[1.9rem]"><Image src="/images/editorial/family-album.webp" alt="Hands resting around an open family photograph album" fill priority sizes="(max-width: 1024px) 90vw, 560px" className="object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" /></div></div>
+          <div className="absolute bottom-3 left-0 max-w-[290px] -rotate-2 rounded-2xl border border-white/70 bg-[#fbf8f2]/95 p-5 shadow-xl backdrop-blur"><p className="text-sm uppercase tracking-[.18em] text-primary-dark">A familiar beginning</p><p className="mt-2 text-lg leading-snug text-text">“Would you like to tell me about this photograph, or simply sit with it for a moment?”</p></div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      {/* Intro Section */}
-      <section className="max-w-4xl mx-auto px-6 py-20">
-        <h2 className="text-4xl md:text-5xl font-semibold text-text mb-8 text-center">
-          What is Mori?
-        </h2>
-        <div className="prose prose-lg max-w-none text-center">
-          <p className="text-xl text-text/80 leading-relaxed mb-6">
-            Mori is an AI-powered companion designed for guided reminiscence, family connection, and life-story conversations.
-            It listens with patience, asks gentle questions, and helps preserve the stories that matter most.
-          </p>
-          <p className="text-xl text-text/80 leading-relaxed">
-            Unlike clinical tools or productivity apps, Mori creates a warm, dignified space where memories can unfold naturally,
-            where stories are honored, and where connection happens at a human pace.
-          </p>
-        </div>
-      </section>
+    <section className="mx-auto max-w-7xl px-6 py-24"><div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr]"><div><p className="text-sm font-semibold uppercase tracking-[.2em] text-primary-dark">What Mori is</p><h2 className="mt-4 text-4xl leading-tight md:text-5xl">A companion for conversation, not a test of memory.</h2></div><div className="grid gap-5 sm:grid-cols-2">{[['Familiar context','Families can add photographs, people, places, and stories that feel safe to revisit.'],['Gentle conversation','Mori listens, reflects, and asks one simple question at a time.'],['Choice throughout','Pause, skip a memory, change the subject, or finish whenever it feels right.'],['Stories together','Keep meaningful details organized and share only with people you choose.']].map(([title,text],i)=><article key={title} className={`rounded-3xl p-7 ${i===0?'bg-primary-dark text-white':i===3?'bg-[#dccbbb]':'bg-white shadow-[0_12px_35px_rgba(61,53,40,.07)]'}`}><span className="text-sm opacity-60">0{i+1}</span><h3 className="mt-7 text-2xl">{title}</h3><p className="mt-3 leading-relaxed opacity-75">{text}</p></article>)}</div></div></section>
 
-      {/* Why Section */}
-      <section className="bg-secondary/20 py-20">
-        <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-4xl md:text-5xl font-semibold text-text mb-12 text-center">
-            Why Mori Exists
-          </h2>
-          <div className="space-y-8 text-lg text-text/80 leading-relaxed">
-            <p>
-              Memories are more than neural pathways—they are the threads that weave our identity, connect generations,
-              and give meaning to our lives. When memories fade, when stories go untold, we lose something precious:
-              the wisdom, the laughter, the love that defines who we are.
-            </p>
-            <p>
-              Mori exists because every person deserves to have their story heard, preserved, and honored.
-              We believe in the dignity of memory, the power of storytelling, and the profound impact of being truly listened to.
-            </p>
-            <p>
-              In a world that moves too fast, Mori offers a quiet room—a gentle companion that helps families,
-              caregivers, and older adults create meaningful moments of connection, one story at a time.
-            </p>
-          </div>
-        </div>
-      </section>
+    <section className="overflow-hidden bg-[#303b34] py-24 text-[#f7f1e8]"><div className="mx-auto max-w-7xl px-6"><div className="mx-auto max-w-3xl text-center"><p className="text-sm uppercase tracking-[.22em] text-[#b9c7b8]">How a moment unfolds</p><h2 className="mt-4 text-4xl md:text-5xl">Simple enough to feel natural</h2><p className="mt-5 text-lg text-white/65">Mori handles the structure quietly, leaving space for the person and the story.</p></div><div className="relative mt-16 grid gap-5 md:grid-cols-3"><div className="absolute left-[16%] right-[16%] top-11 hidden border-t border-dashed border-white/25 md:block" />{[['01','Choose what feels familiar','A photograph, person, place, song, or family note can offer a comfortable starting point.'],['02','Talk at an unhurried pace','Mori begins with ordinary conversation, listens for pauses, and follows the person’s lead.'],['03','Keep what matters','Stories and reflections stay organized for the individual and their authorized family.']].map(([n,title,text])=><article key={n} className="relative rounded-[2rem] border border-white/10 bg-white/[.055] p-7 backdrop-blur"><span className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-[#e8ddcd] font-sans text-sm font-bold text-[#303b34]">{n}</span><h3 className="mt-8 text-2xl">{title}</h3><p className="mt-4 leading-relaxed text-white/65">{text}</p></article>)}</div><div className="mt-10 text-center"><Link href="/how-it-works" className="inline-flex items-center gap-2 border-b border-[#b9c7b8] pb-1 text-[#d9e1d7]">Explore the full experience <span aria-hidden="true">→</span></Link></div></div></section>
 
-      {/* Audience Section */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
-        <h2 className="text-4xl md:text-5xl font-semibold text-text mb-16 text-center">
-          Who is Mori for?
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Link
-            href="/for-families"
-            className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow duration-500 group"
-          >
-            <div className="w-full h-64 bg-secondary/30 rounded-xl mb-6 relative overflow-hidden">
-              <Image
-                src="/images/FF.png"
-                alt="For Families"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <h3 className="text-2xl font-semibold text-text mb-4 group-hover:text-primary transition-colors duration-500">
-              For Families
-            </h3>
-            <p className="text-lg text-text/70 leading-relaxed">
-              Preserve your loved ones' stories before they fade. Create meaningful conversations across generations and build a legacy of memories.
-            </p>
-          </Link>
+    <section className="mx-auto max-w-7xl px-6 py-24"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="text-sm font-semibold uppercase tracking-[.2em] text-primary-dark">Made for real relationships</p><h2 className="mt-4 max-w-2xl text-4xl md:text-5xl">Different people, one shared purpose</h2></div><p className="max-w-md text-lg text-text/65">Connection starts differently for every family. Mori meets each person where they are.</p></div><div className="mt-12 grid gap-6 lg:grid-cols-3">{audiences.map((item,index)=><Link key={item.eyebrow} href={item.href} className={`group rounded-[2rem] border border-text/10 p-8 transition duration-500 hover:-translate-y-1 hover:shadow-xl ${index===1?'bg-[#e2d2c5]':'bg-white'}`}><div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-secondary/70 text-primary-dark transition group-hover:rotate-3"><AudienceIcon kind={item.icon}/></div><p className="mt-8 text-sm font-semibold uppercase tracking-[.16em] text-primary-dark">{item.eyebrow}</p><h3 className="mt-3 text-2xl leading-snug">{item.title}</h3><p className="mt-4 leading-relaxed text-text/65">{item.text}</p><span className="mt-7 inline-flex text-primary-dark">Learn more →</span></Link>)}</div></section>
 
-          <Link
-            href="/for-caregivers"
-            className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow duration-500 group"
-          >
-            <div className="w-full h-64 bg-secondary/30 rounded-xl mb-6 relative overflow-hidden">
-              <Image
-                src="/images/FC.png"
-                alt="For Caregivers"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <h3 className="text-2xl font-semibold text-text mb-4 group-hover:text-primary transition-colors duration-500">
-              For Caregivers
-            </h3>
-            <p className="text-lg text-text/70 leading-relaxed">
-              Support familiar conversations with a reminiscence companion. Families and caregivers guide which memories are comfortable to use.
-            </p>
-          </Link>
-
-          <Link
-            href="/for-families"
-            className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow duration-500 group"
-          >
-            <div className="w-full h-64 bg-secondary/30 rounded-xl mb-6 relative overflow-hidden">
-              <Image
-                src="/images/FOA.png"
-                alt="For Older Adults"
-                fill
-                className="object-cover"
-              />
-            </div>
-            <h3 className="text-2xl font-semibold text-text mb-4 group-hover:text-primary transition-colors duration-500">
-              For Older Adults
-            </h3>
-            <p className="text-lg text-text/70 leading-relaxed">
-              Share your life story in your own time. A gentle companion that listens, remembers, and helps you preserve what matters most.
-            </p>
-          </Link>
-        </div>
-      </section>
-
-      {/* Waitlist Section */}
-      <section id="waitlist" className="scroll-mt-24 bg-primary/5 py-20">
-        <div className="mx-auto max-w-3xl px-6">
-          <div className="text-center">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-primary">Stay connected</p>
-            <h2 className="text-4xl font-semibold text-text md:text-5xl">Join the Mori waitlist</h2>
-            <p className="mx-auto mt-5 max-w-2xl text-xl leading-relaxed text-text/75">
-              Be among the first to hear about future access, family tools, and carefully supervised pilot opportunities.
-            </p>
-          </div>
-          <WaitlistForm />
-        </div>
-      </section>
-
-      {/* Closing Section */}
-      <section className="bg-primary/5 py-20">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <blockquote className="text-2xl md:text-3xl text-text/80 italic leading-relaxed">
-            "Memory is the diary that we all carry about with us."
-          </blockquote>
-          <p className="text-lg text-text/60 mt-6">— Oscar Wilde</p>
-        </div>
-      </section>
-    </>
-  )
+    <section id="waitlist" className="scroll-mt-24 border-y border-primary/10 bg-[#e9e0d4] py-24"><div className="mx-auto grid max-w-7xl gap-12 px-6 lg:grid-cols-[.78fr_1.22fr] lg:items-start"><div className="lg:sticky lg:top-28"><p className="text-sm font-semibold uppercase tracking-[.22em] text-primary-dark">Stay connected</p><h2 className="mt-4 text-4xl leading-tight md:text-5xl">A thoughtful beginning is taking shape.</h2><p className="mt-6 text-xl leading-relaxed text-text/70">Join the waitlist for future access, family tools, and carefully supervised pilot opportunities.</p><p className="mt-8 text-sm leading-relaxed text-text/55">No constant emails. We’ll only share meaningful Mori updates, and you can unsubscribe at any time.</p></div><WaitlistForm /></div></section>
+  </>
 }

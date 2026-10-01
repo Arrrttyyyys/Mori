@@ -1,88 +1,10 @@
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default function ForCaregivers() {
-  const benefits = [
-    {
-      title: 'Support residents with dignity',
-      description: 'Mori provides a respectful, dignified way to engage residents in meaningful conversations that honor their life experiences.',
-    },
-    {
-      title: 'Meaningful reminiscence',
-      description: 'Use familiar photographs and family stories to invite a comfortable conversation, at the person’s pace.',
-    },
-    {
-      title: 'Easy to use, no training required',
-      description: 'Mori is designed to be intuitive. Residents can use it independently, or staff can facilitate conversations with minimal setup.',
-    },
-    {
-      title: 'Brings joy and connection',
-      description: 'Watch residents light up as they share stories. Mori creates moments of connection, validation, and joy in care settings.',
-    },
-  ]
-
-  return (
-    <>
-      {/* Hero Section */}
-      <section className="bg-secondary/20 py-20">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-7xl font-semibold text-text mb-6 leading-tight">
-            For Caregivers
-          </h1>
-          <p className="text-xl md:text-2xl text-text/80 leading-relaxed">
-            Supporting residents with dignity through guided reminiscence
-          </p>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <section className="max-w-5xl mx-auto px-6 py-20">
-        <div className="space-y-12 mb-16">
-          <p className="text-xl text-text/80 leading-relaxed">
-            As a caregiver, you understand the importance of treating each resident with dignity,
-            respect, and compassion. You know that beyond medical care, emotional wellbeing and
-            meaningful engagement are essential to quality of life.
-          </p>
-          <p className="text-xl text-text/80 leading-relaxed">
-            Mori supports your work by providing a gentle tool for guided reminiscence—a
-            evidence-based approach that helps residents reconnect with their past, share their
-            stories, and experience moments of joy and validation.
-          </p>
-        </div>
-
-        {/* Benefits Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-          {benefits.map((benefit, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow duration-500"
-            >
-              <h3 className="text-2xl font-semibold text-text mb-4">
-                {benefit.title}
-              </h3>
-              <p className="text-lg text-text/70 leading-relaxed">
-                {benefit.description}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Image */}
-        <div className="w-full h-96 relative rounded-2xl overflow-hidden mb-16 shadow-lg">
-          <Image
-            src="/images/FC.png"
-            alt="Professional caregiver"
-            fill
-            className="object-cover"
-          />
-        </div>
-
-        {/* Closing */}
-        <div className="text-center">
-          <p className="text-xl md:text-2xl text-text/80 leading-relaxed">
-            Mori is designed to complement your care, not complicate it. Simple, respectful, and effective.
-          </p>
-        </div>
-      </section>
-    </>
-  )
+  return <main>
+    <section className="relative overflow-hidden bg-[#303b34] text-white"><div className="mx-auto grid min-h-[690px] max-w-7xl items-center gap-14 px-6 py-16 lg:grid-cols-2"><div><p className="text-sm uppercase tracking-[.22em] text-[#b9c7b8]">For caregivers</p><h1 className="mt-5 text-5xl leading-[1.03] tracking-[-.03em] md:text-7xl">A gentler way into meaningful conversation.</h1><p className="mt-7 max-w-xl text-xl leading-relaxed text-white/70">Mori helps caregivers begin with familiar, family-approved context while keeping dignity, choice, and human connection at the center.</p><Link href="/#waitlist" className="mt-9 inline-flex rounded-full bg-[#e8ddcd] px-7 py-3.5 text-lg text-[#303b34] transition hover:-translate-y-0.5">Explore future access</Link></div><div className="relative h-[510px] overflow-hidden rounded-[2.5rem] border border-white/10 p-3"><div className="relative h-full overflow-hidden rounded-[1.8rem]"><Image src="/images/editorial/caregiver-conversation.webp" alt="A caregiver having a warm conversation with an older woman" fill priority sizes="(max-width: 1024px) 92vw, 580px" className="object-cover" /></div></div></div></section>
+    <section className="mx-auto max-w-7xl px-6 py-24"><div className="max-w-3xl"><p className="text-sm font-semibold uppercase tracking-[.2em] text-primary-dark">Designed to complement care</p><h2 className="mt-4 text-4xl leading-tight md:text-5xl">More context before the conversation. Less pressure during it.</h2><p className="mt-6 text-xl leading-relaxed text-text/70">A caregiver may not know the story behind every name or photograph. Mori can organize the context a family chooses to provide, so a familiar subject is easier to approach with care.</p></div><div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-4">{[['Person-led','The resident can pause, skip, redirect, or finish at any time.'],['Familiar','Family context helps a conversation begin somewhere recognizable.'],['Unhurried','Prompts stay simple, with space for silence and reflection.'],['Supportive','Mori is a conversation aid; it does not replace care, judgment, or presence.']].map(([title,text],i)=><article key={title} className={`rounded-[2rem] p-7 ${i===2?'bg-[#dfcfc0]':'border border-text/10 bg-white'}`}><span className="text-sm text-primary-dark">0{i+1}</span><h3 className="mt-8 text-2xl">{title}</h3><p className="mt-4 leading-relaxed text-text/65">{text}</p></article>)}</div></section>
+    <section className="bg-[#e9e0d4] py-24"><div className="mx-auto grid max-w-7xl items-center gap-16 px-6 lg:grid-cols-[1.1fr_.9fr]"><div><p className="text-sm font-semibold uppercase tracking-[.2em] text-primary-dark">A calm session rhythm</p><div className="mt-9 grid gap-3 sm:grid-cols-[1fr_auto_1fr_auto_1fr] sm:items-center">{[['1','Settle','Begin with everyday conversation.'],['2','Invite','Offer one familiar memory gently.'],['3','Follow','Listen, allow silence, and respond.']].map(([n,title,text],i)=><div key={n} className="contents"><article className="rounded-3xl bg-white p-6 text-center shadow-[0_12px_32px_rgba(61,53,40,.07)]"><span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary-dark text-sm text-white">{n}</span><h3 className="mt-4 text-xl">{title}</h3><p className="mt-2 text-sm leading-relaxed text-text/60">{text}</p></article>{i<2&&<span className="hidden text-primary/60 sm:block" aria-hidden="true">→</span>}</div>)}</div></div><div><h2 className="text-4xl leading-tight">The pause is part of the conversation.</h2><p className="mt-6 text-lg leading-relaxed text-text/70">Mori’s session design allows thinking time before it speaks again. If someone appears uncomfortable, the experience can move away from the topic or end.</p><div className="mt-8 rounded-2xl border border-primary/20 bg-white/55 p-6"><p className="font-semibold">Mori is not a medical device.</p><p className="mt-2 text-text/65">It does not diagnose, assess cognition, provide treatment, or replace trained professionals.</p></div></div></div></section>
+  </main>
 }

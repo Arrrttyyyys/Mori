@@ -12,11 +12,17 @@
   }
 
   body {
-    @apply leading-relaxed;
+    @apply bg-background leading-relaxed text-text antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: #c8d3c7;
+    color: #303b34;
   }
 }
 

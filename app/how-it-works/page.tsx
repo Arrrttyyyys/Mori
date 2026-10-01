@@ -1,76 +1,20 @@
+import Link from 'next/link'
+
+const steps = [
+  ['01','Prepare with care','A family member adds familiar photographs and life details, then chooses what may be used in sessions.'],
+  ['02','Arrive gently','Mori starts with ordinary conversation and checks how the person feels before offering a memory.'],
+  ['03','Follow the person','The person can speak or type. Mori leaves room for pauses and asks only one question at a time.'],
+  ['04','Keep the story','With permission, meaningful details are organized so they can be revisited or shared with authorized family.'],
+]
+
 export default function HowItWorks() {
-  const steps = [
-    {
-      number: '1',
-      title: 'Begin with a memory',
-      description: 'Start a conversation by sharing a memory—whether through voice or text. It could be a moment from childhood, a favorite place, or a person who mattered.',
-    },
-    {
-      number: '2',
-      title: 'Mori listens and asks gentle questions',
-      description: 'Mori listens with patience and asks thoughtful follow-up questions that help you explore deeper. No pressure, no rush—just a gentle companion guiding the conversation.',
-    },
-    {
-      number: '3',
-      title: 'Stories are preserved and organized',
-      description: 'As you share, Mori quietly organizes your stories, creating a beautiful timeline of your life. Everything is saved securely and can be revisited anytime.',
-    },
-    {
-      number: '4',
-      title: 'Share with family or keep private',
-      description: 'Choose to share your stories with loved ones, creating connections across generations, or keep them private as your personal memory archive.',
-    },
-  ]
-
-  return (
-    <>
-      {/* Hero Section */}
-      <section className="bg-secondary/20 py-20">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-7xl font-semibold text-text mb-6 leading-tight">
-            How Mori Works
-          </h1>
-          <p className="text-xl md:text-2xl text-text/80 leading-relaxed">
-            A gentle, natural conversation that honors your stories
-          </p>
-        </div>
-      </section>
-
-      {/* Process Section */}
-      <section className="max-w-5xl mx-auto px-6 py-20">
-        <div className="space-y-16">
-          {steps.map((step, index) => (
-            <div
-              key={index}
-              className="flex flex-col md:flex-row gap-8 items-start group"
-            >
-              <div className="flex-shrink-0">
-                <div className="w-20 h-20 rounded-full bg-primary text-white flex items-center justify-center text-3xl font-semibold shadow-lg group-hover:scale-110 transition-transform duration-500">
-                  {step.number}
-                </div>
-              </div>
-              <div className="flex-1 pt-2">
-                <h2 className="text-3xl md:text-4xl font-semibold text-text mb-4">
-                  {step.title}
-                </h2>
-                <p className="text-xl text-text/80 leading-relaxed">
-                  {step.description}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Closing Section */}
-      <section className="bg-secondary/20 py-20">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <p className="text-xl md:text-2xl text-text/80 leading-relaxed">
-            Mori is designed to feel like talking to a trusted friend—someone who listens, 
-            remembers, and helps you explore the stories that shape who you are.
-          </p>
-        </div>
-      </section>
-    </>
-  )
+  return <main>
+    <section className="relative overflow-hidden bg-[#303b34] py-24 text-[#f7f1e8] md:py-32"><div className="absolute -right-24 -top-24 h-96 w-96 rounded-full border border-white/10"/><div className="absolute -right-6 top-12 h-64 w-64 rounded-full border border-white/10"/><div className="relative mx-auto max-w-5xl px-6 text-center"><p className="text-sm uppercase tracking-[.24em] text-[#b9c7b8]">The Mori experience</p><h1 className="mx-auto mt-5 max-w-4xl text-5xl leading-[1.04] md:text-7xl">A conversation shaped around the person.</h1><p className="mx-auto mt-7 max-w-2xl text-xl leading-relaxed text-white/70">The technology stays in the background. Familiar context, patient pacing, and clear consent guide every session.</p></div></section>
+    <section className="mx-auto max-w-7xl px-6 py-24"><div className="grid gap-16 lg:grid-cols-[.7fr_1.3fr]"><div><p className="text-sm font-semibold uppercase tracking-[.2em] text-primary-dark">From family context to a shared moment</p><h2 className="mt-4 text-4xl leading-tight">Four steps, with choice at every point.</h2><p className="mt-5 text-lg leading-relaxed text-text/65">Mori can offer structure, but it never requires someone to remember, continue, or answer.</p></div><div className="relative"><div className="absolute bottom-10 left-[27px] top-10 border-l border-dashed border-primary/35"/>{steps.map(([n,title,text])=><article key={n} className="relative grid grid-cols-[56px_1fr] gap-6 pb-10 last:pb-0"><span className="z-10 flex h-14 w-14 items-center justify-center rounded-full bg-primary-dark text-sm font-semibold text-white">{n}</span><div className="rounded-3xl border border-text/10 bg-white p-7 shadow-[0_12px_30px_rgba(61,53,40,.05)]"><h3 className="text-2xl">{title}</h3><p className="mt-3 text-lg leading-relaxed text-text/65">{text}</p></div></article>)}</div></div></section>
+    <section className="bg-[#e6dbce] py-24"><div className="mx-auto max-w-6xl px-6"><div className="text-center"><p className="text-sm font-semibold uppercase tracking-[.2em] text-primary-dark">What the system does quietly</p><h2 className="mt-4 text-4xl md:text-5xl">A clear flow, without the clinical feel</h2></div><div className="mt-14 grid items-center gap-4 md:grid-cols-[1fr_auto_1fr_auto_1fr]"><DiagramCard icon="◇" title="Approved context" text="Memories, people, places, preferences"/><Arrow/><DiagramCard icon="◌" title="Gentle session" text="Listening, pacing, safety checks"/><Arrow/><DiagramCard icon="⌁" title="Family connection" text="Stories, summaries, shared understanding"/></div><div className="mt-10 rounded-2xl border border-primary/15 bg-white/60 p-6 text-center text-text/65">Consent and current comfort surround the entire flow. A person’s wish to pause or stop always takes priority.</div></div></section>
+    <section className="mx-auto max-w-4xl px-6 py-24 text-center"><p className="text-sm font-semibold uppercase tracking-[.2em] text-primary-dark">Designed for dignity</p><h2 className="mt-4 text-4xl">There are no wrong answers here.</h2><p className="mx-auto mt-6 max-w-2xl text-xl leading-relaxed text-text/70">Mori does not diagnose, test memory, or replace human care. It offers a calm structure for connection around the stories a person wants to share.</p><Link href="/#waitlist" className="mt-9 inline-flex rounded-full bg-primary-dark px-7 py-3.5 text-lg text-white">Join the waitlist</Link></section>
+  </main>
 }
+
+function DiagramCard({icon,title,text}:{icon:string,title:string,text:string}) { return <div className="rounded-[2rem] bg-white p-7 text-center shadow-[0_16px_40px_rgba(61,53,40,.08)]"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-2xl text-primary-dark">{icon}</span><h3 className="mt-5 text-2xl">{title}</h3><p className="mt-3 text-text/60">{text}</p></div> }
+function Arrow(){return <div className="hidden text-2xl text-primary/60 md:block" aria-hidden="true">→</div>}

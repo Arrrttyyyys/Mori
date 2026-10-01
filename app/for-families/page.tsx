@@ -1,84 +1,16 @@
 import Image from 'next/image'
+import Link from 'next/link'
+
+const ways = [
+  ['Bring what feels familiar', 'Add photographs, names, places, and small details that can make a conversation feel personal.'],
+  ['Choose what may be shared', 'The family decides which context Mori can use, and who is allowed to see preserved stories.'],
+  ['Let the person lead', 'There is room to pause, skip, change the subject, or simply enjoy a photograph together.'],
+]
 
 export default function ForFamilies() {
-  const features = [
-    {
-      title: 'Preserve stories before they fade',
-      description: 'Capture the memories, wisdom, and experiences of your loved ones while they can still share them. Create a lasting legacy for future generations.',
-    },
-    {
-      title: 'Meaningful conversations across generations',
-      description: 'Bridge the gap between generations through storytelling. Help children and grandchildren understand their family history and heritage.',
-    },
-    {
-      title: 'Build a legacy of memories',
-      description: 'Create a beautiful, organized archive of family stories that can be passed down, revisited, and cherished for years to come.',
-    },
-  ]
-
-  return (
-    <>
-      {/* Hero Section */}
-      <section className="bg-secondary/20 py-20">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-7xl font-semibold text-text mb-6 leading-tight">
-            For Families
-          </h1>
-          <p className="text-xl md:text-2xl text-text/80 leading-relaxed">
-            Preserve your loved ones' stories and create connections that last
-          </p>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <section className="max-w-5xl mx-auto px-6 py-20">
-        <div className="space-y-12 mb-16">
-          <p className="text-xl text-text/80 leading-relaxed">
-            Time moves forward, but memories can fade. As our parents and grandparents age, 
-            their stories—the ones that shaped our family, the wisdom they carry, the moments 
-            that defined them—become more precious than ever.
-          </p>
-          <p className="text-xl text-text/80 leading-relaxed">
-            Mori helps families capture these stories while they can still be shared. 
-            It's a gentle way to start conversations, preserve memories, and create a legacy 
-            that your children and grandchildren will treasure.
-          </p>
-        </div>
-
-        {/* Feature Highlights */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow duration-500"
-            >
-              <h3 className="text-2xl font-semibold text-text mb-4">
-                {feature.title}
-              </h3>
-              <p className="text-lg text-text/70 leading-relaxed">
-                {feature.description}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Image */}
-        <div className="w-full h-96 relative rounded-2xl overflow-hidden mb-16 shadow-lg">
-          <Image
-            src="/images/FF.png"
-            alt="Multi-generational family"
-            fill
-            className="object-cover"
-          />
-        </div>
-
-        {/* Closing */}
-        <div className="text-center">
-          <p className="text-xl md:text-2xl text-text/80 leading-relaxed italic">
-            "The stories we tell ourselves and others shape who we are and who we become."
-          </p>
-        </div>
-      </section>
-    </>
-  )
+  return <main>
+    <section className="mx-auto grid max-w-7xl items-center gap-14 px-6 py-16 lg:grid-cols-[.9fr_1.1fr] lg:py-24"><div><p className="text-sm font-semibold uppercase tracking-[.22em] text-primary-dark">For families</p><h1 className="mt-5 text-5xl leading-[1.04] tracking-[-.03em] md:text-7xl">The story behind a photograph can become part of the family.</h1><p className="mt-7 max-w-xl text-xl leading-relaxed text-text/70">Mori helps families prepare familiar moments that invite conversation—then gives their loved one the time and choice to tell the story in their own way.</p><Link href="/#waitlist" className="mt-9 inline-flex rounded-full bg-primary-dark px-7 py-3.5 text-lg text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-primary">Join the waitlist</Link></div><div className="relative h-[520px] overflow-hidden rounded-[2.5rem] bg-white p-3 shadow-[0_28px_70px_rgba(61,53,40,.16)]"><div className="relative h-full overflow-hidden rounded-[1.8rem]"><Image src="/images/editorial/shared-photographs.webp" alt="An older couple looking through printed photographs together" fill priority sizes="(max-width: 1024px) 92vw, 600px" className="object-cover" /></div></div></section>
+    <section className="border-y border-primary/10 bg-[#e8ded1] py-24"><div className="mx-auto max-w-7xl px-6"><div className="grid gap-12 lg:grid-cols-[.7fr_1.3fr]"><div><p className="text-sm font-semibold uppercase tracking-[.2em] text-primary-dark">A shared act of care</p><h2 className="mt-4 text-4xl leading-tight md:text-5xl">You provide the familiarity. Mori makes room for the conversation.</h2></div><div className="grid gap-5 md:grid-cols-3">{ways.map(([title,text],i)=><article key={title} className="rounded-3xl bg-white/75 p-7"><span className="text-sm text-primary-dark">0{i+1}</span><h3 className="mt-8 text-2xl leading-snug">{title}</h3><p className="mt-4 leading-relaxed text-text/65">{text}</p></article>)}</div></div></div></section>
+    <section className="mx-auto max-w-7xl px-6 py-24"><div className="grid items-center gap-16 lg:grid-cols-2"><div className="rounded-[2rem] bg-[#303b34] p-8 text-white md:p-10"><p className="text-sm uppercase tracking-[.2em] text-[#b9c7b8]">A memory’s path</p><div className="mt-8 space-y-4">{[['Family adds context','A photograph and the details that make it meaningful.'],['Mori opens gently','Ordinary conversation comes before an invitation to reminisce.'],['The person shares','Their pace, words, corrections, and boundaries guide the moment.'],['Family reconnects','Authorized relatives can return to the stories that were kept.']].map(([title,text],i)=><div key={title} className="grid grid-cols-[42px_1fr] gap-4 rounded-2xl border border-white/10 bg-white/[.055] p-4"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e8ddcd] text-sm font-bold text-[#303b34]">{i+1}</span><div><h3 className="text-lg">{title}</h3><p className="mt-1 text-sm leading-relaxed text-white/60">{text}</p></div></div>)}</div></div><div><p className="text-sm font-semibold uppercase tracking-[.2em] text-primary-dark">Built around permission</p><h2 className="mt-4 text-4xl leading-tight md:text-5xl">Preserving a story should never take ownership away from its storyteller.</h2><p className="mt-6 text-lg leading-relaxed text-text/70">Mori is designed around clear sharing controls, family-approved context, and the person’s comfort in the moment. It does not ask someone to prove what they remember.</p><blockquote className="mt-8 border-l-2 border-primary pl-6 text-2xl italic leading-relaxed text-text/80">A meaningful memory can be a full story, a single detail, or simply a feeling shared together.</blockquote></div></div></section>
+  </main>
 }

@@ -18,20 +18,21 @@ export default function Header() {
   ]
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-secondary/50 transition-all duration-500">
+    <header className="sticky top-0 z-50 border-b border-text/10 bg-background/90 backdrop-blur-xl transition-all duration-500">
       <nav className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-primary text-2xl font-semibold italic hover:opacity-80 transition-opacity duration-500">
-            Mori
+          <Link href="/" className="group flex items-center gap-3 text-primary-dark transition-opacity duration-500 hover:opacity-75">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/40 text-xl italic">M</span>
+            <span className="text-2xl font-semibold italic">Mori</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-7">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-text hover:text-primary transition-colors duration-500 text-lg"
+                className="text-[15px] text-text/75 transition-colors duration-500 hover:text-primary-dark"
               >
                 {link.label}
               </Link>
@@ -40,13 +41,13 @@ export default function Header() {
               <>
                 <Link
                   href="/dashboard"
-                  className="text-text hover:text-primary transition-colors duration-500 text-lg"
+                  className="text-[15px] text-text/75 transition-colors duration-500 hover:text-primary-dark"
                 >
                   Dashboard
                 </Link>
                 <button
                   onClick={logout}
-                  className="bg-primary text-white px-6 py-2 rounded-full hover:opacity-90 transition-opacity duration-500"
+                  className="rounded-full bg-primary-dark px-6 py-2.5 text-white transition duration-500 hover:-translate-y-0.5 hover:bg-primary"
                 >
                   Sign Out
                 </button>
@@ -54,7 +55,7 @@ export default function Header() {
             ) : (
               <Link
                 href="/auth"
-                className="bg-primary text-white px-6 py-2 rounded-full hover:opacity-90 transition-opacity duration-500"
+                className="rounded-full bg-primary-dark px-6 py-2.5 text-white transition duration-500 hover:-translate-y-0.5 hover:bg-primary"
               >
                 Sign In
               </Link>
