@@ -4,8 +4,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import type { TherapyResponse } from "@/lib/therapy/types";
 import {
   mergeVoiceTranscript,
-  type MoriViseme,
-  visemeSequenceForText,
   voicePauseDelayMs,
 } from "@/lib/therapy/turn-taking";
 interface Props {
@@ -40,7 +38,6 @@ export default function TherapyInterface({
   const [waitingForTurn, setWaitingForTurn] = useState(false);
   const [moriSpeaking, setMoriSpeaking] = useState(false);
   const [speechBeat, setSpeechBeat] = useState(false);
-  const [moriViseme, setMoriViseme] = useState<MoriViseme>("rest");
   const [mediaPlaying, setMediaPlaying] = useState(false);
   const [input, setInput] = useState("");
   const [error, setError] = useState("");
@@ -70,7 +67,6 @@ export default function TherapyInterface({
   const voiceDraftRef = useRef("");
   const lastVoiceActivity = useRef(0);
   const speechAnimation = useRef<ReturnType<typeof setInterval> | null>(null);
-  const visemeTimers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   const latestSpeech = useRef<{ text: string; at: number }>({
     text: "",
     at: 0,
@@ -80,30 +76,6 @@ export default function TherapyInterface({
   const finishButton = useRef<HTMLButtonElement | null>(null);
   const endDialog = useRef<HTMLElement | null>(null);
   const requestAbort = useRef<AbortController | null>(null);
-  const resetVisemes = useCallback(() => {
-    visemeTimers.current.forEach(clearTimeout);
-    visemeTimers.current = [];
-    if (mounted.current) setMoriViseme("rest");
-  }, []);
-  const animateWord = useCallback(
-    (word: string) => {
-      resetVisemes();
-      const sequence = visemeSequenceForText(word);
-      sequence.forEach((viseme, index) => {
-        visemeTimers.current.push(
-          setTimeout(() => {
-            if (mounted.current) setMoriViseme(viseme);
-          }, index * 85),
-        );
-      });
-      visemeTimers.current.push(
-        setTimeout(() => {
-          if (mounted.current) setMoriViseme("rest");
-        }, sequence.length * 85 + 70),
-      );
-    },
-    [resetVisemes],
-  );
   const clearTurnTimer = useCallback(() => {
     if (turnTimer.current) clearTimeout(turnTimer.current);
     turnTimer.current = null;
@@ -133,7 +105,6 @@ export default function TherapyInterface({
     if (restart.current) clearTimeout(restart.current);
     clearVoiceDraft();
     if (speechAnimation.current) clearInterval(speechAnimation.current);
-    resetVisemes();
     speechAnimation.current = null;
     setSpeechBeat(false);
     recognition.current?.abort();
@@ -163,16 +134,13 @@ export default function TherapyInterface({
       () => setSpeechBeat((current) => !current),
       180,
     );
-    utterance.onboundary = (event) => {
+    utterance.onboundary = () => {
       setSpeechBeat((current) => !current);
-      const remaining = text.slice(event.charIndex);
-      animateWord(remaining.match(/[A-Za-z']+/)?.[0] ?? remaining.slice(0, 4));
     };
     utterance.onend = utterance.onerror = () => {
       if (speechAnimation.current) clearInterval(speechAnimation.current);
       speechAnimation.current = null;
       setSpeechBeat(false);
-      resetVisemes();
       speaking.current = false;
       setMoriSpeaking(false);
       if (mounted.current) restart.current = setTimeout(startListening, 500);
@@ -371,7 +339,6 @@ export default function TherapyInterface({
       if (restart.current) clearTimeout(restart.current);
       if (turnTimer.current) clearTimeout(turnTimer.current);
       if (speechAnimation.current) clearInterval(speechAnimation.current);
-      resetVisemes();
       if (recognition.current) {
         recognition.current.onend = null;
         recognition.current.onresult = null;
@@ -381,7 +348,7 @@ export default function TherapyInterface({
       window.speechSynthesis?.cancel();
       requestAbort.current?.abort();
     };
-  }, [clearTurnTimer, language, resetVisemes, scheduleVoiceTurn, startListening]);
+  }, [clearTurnTimer, language, scheduleVoiceTurn, startListening]);
   const toggleVoice = () => {
     if (!audioAllowed) {
       setError("Voice is turned off in the family profile.");
@@ -407,7 +374,6 @@ export default function TherapyInterface({
   const stopMoriSpeaking = () => {
     window.speechSynthesis?.cancel();
     if (speechAnimation.current) clearInterval(speechAnimation.current);
-    resetVisemes();
     speechAnimation.current = null;
     setSpeechBeat(false);
     speaking.current = false;
@@ -582,34 +548,23 @@ export default function TherapyInterface({
             </figure>
           ) : (
             <div className="relative z-10 text-center">
-              <div className={`relative mx-auto mb-7 w-fit rounded-full bg-[#dbe3d9]/10 p-3 ring-1 ring-white/15 shadow-2xl transition-transform duration-100 ${moriSpeaking && speechBeat ? "scale-[1.015] -translate-y-0.5" : "scale-100"}`}>
+              <div className={`relative mx-auto mb-12 w-fit rounded-full bg-[#dbe3d9]/10 p-3 ring-1 ring-white/15 shadow-2xl transition-transform duration-700 ${moriSpeaking && speechBeat ? "scale-[1.008]" : "scale-100"}`}>
+                {moriSpeaking && <><span aria-hidden="true" className="absolute -inset-2 rounded-full border border-[#b9cbbb]/40 motion-safe:animate-ping [animation-duration:2.4s]"/><span aria-hidden="true" className="absolute -inset-5 rounded-full border border-[#b9cbbb]/15 motion-safe:animate-pulse"/></>}
                 <div className="relative h-48 w-48 overflow-hidden rounded-full sm:h-60 sm:w-60 md:h-72 md:w-72">
                   <img
                     src="/images/mori-companion.png"
                     alt="Mori, your AI companion"
                     className="h-full w-full object-cover"
                   />
-                  {moriSpeaking && moriViseme !== "rest" && (
-                    <span
-                      aria-hidden="true"
-                      data-viseme={moriViseme}
-                      className={`absolute left-[49%] top-[49%] -translate-x-1/2 -translate-y-1/2 shadow-[0_1px_1px_rgba(42,20,18,0.25)] motion-reduce:hidden ${
-                        moriViseme === "round"
-                          ? "h-[5.2%] w-[4.2%] rounded-[50%] border border-[#9b6263] bg-[#4b2927]"
-                          : moriViseme === "wide"
-                            ? "h-[3.1%] w-[11.2%] rounded-[48%] border border-[#a46a6c] bg-[#603331]"
-                            : moriViseme === "teeth"
-                              ? "h-[3.2%] w-[9.4%] rounded-[45%] border border-[#9d6668] bg-[linear-gradient(to_bottom,#eee5dc_0_44%,#59302e_45%_100%)]"
-                              : "h-[4.8%] w-[8.8%] rounded-[48%] border border-[#9e6668] bg-[#4d2927]"
-                      }`}
-                    />
-                  )}
                 </div>
                 {moriSpeaking && (
-                  <span aria-hidden="true" className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-end gap-1 rounded-full bg-[#18221d]/80 px-3 py-2 shadow-lg backdrop-blur-sm">
-                    <span className={`w-1 rounded-full bg-[#dbe3d9] transition-all ${speechBeat ? "h-4" : "h-2"}`} />
-                    <span className={`w-1 rounded-full bg-[#dbe3d9] transition-all ${speechBeat ? "h-2" : "h-5"}`} />
-                    <span className={`w-1 rounded-full bg-[#dbe3d9] transition-all ${speechBeat ? "h-5" : "h-3"}`} />
+                  <span aria-hidden="true" className="absolute -bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-white/10 bg-[#18221d]/95 px-4 py-2.5 text-sm text-white/80 shadow-xl backdrop-blur-sm">
+                    <span className="flex h-5 items-center gap-1">
+                      <span className={`w-0.5 rounded-full bg-[#dbe3d9] transition-all ${speechBeat ? "h-4" : "h-2"}`} />
+                      <span className={`w-0.5 rounded-full bg-[#dbe3d9] transition-all ${speechBeat ? "h-2" : "h-5"}`} />
+                      <span className={`w-0.5 rounded-full bg-[#dbe3d9] transition-all ${speechBeat ? "h-5" : "h-3"}`} />
+                    </span>
+                    Mori is speaking
                   </span>
                 )}
               </div>
