@@ -9,6 +9,7 @@ export default function Auth() {
   const [isSignIn, setIsSignIn] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [name, setName] = useState('')
   const [relationship, setRelationship] = useState<AccountRelationship | ''>('')
   const [acceptTerms, setAcceptTerms] = useState(false)
@@ -17,6 +18,7 @@ export default function Auth() {
   const [notice, setNotice] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [demoCode, setDemoCode] = useState('')
+  const [showDemoCode, setShowDemoCode] = useState(false)
   const [demoSubmitting, setDemoSubmitting] = useState(false)
   const { login, signup, enterDemo } = useAuth()
 
@@ -200,17 +202,21 @@ export default function Auth() {
               >
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                minLength={isSignIn ? undefined : 12}
-                maxLength={128}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-500 text-lg"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  name="password"
+                  autoComplete={isSignIn ? 'current-password' : 'new-password'}
+                  minLength={isSignIn ? undefined : 12}
+                  maxLength={128}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-xl border border-secondary/50 py-3 pl-4 pr-14 text-lg transition-all duration-500 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  placeholder="••••••••"
+                />
+                <PasswordVisibilityButton visible={showPassword} onClick={() => setShowPassword((visible) => !visible)} label="password" />
+              </div>
             </div>
 
             {isSignIn && (
@@ -243,7 +249,10 @@ export default function Auth() {
           {/* Guided demo */}
           <div className="space-y-3">
             <label htmlFor="demo-code" className="block text-sm font-medium text-text/80">Demo access code</label>
-            <input id="demo-code" type="password" autoComplete="off" value={demoCode} onChange={(event) => setDemoCode(event.target.value)} className="w-full rounded-xl border border-secondary/50 px-4 py-3 text-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="Enter the private demo code" />
+            <div className="relative">
+              <input id="demo-code" type={showDemoCode ? 'text' : 'password'} autoComplete="off" value={demoCode} onChange={(event) => setDemoCode(event.target.value)} className="w-full rounded-xl border border-secondary/50 py-3 pl-4 pr-14 text-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="Enter the private demo code" />
+              <PasswordVisibilityButton visible={showDemoCode} onClick={() => setShowDemoCode((visible) => !visible)} label="demo access code" />
+            </div>
             <button
               type="button"
               disabled={demoSubmitting}
@@ -258,4 +267,10 @@ export default function Auth() {
       </section>
     </>
   )
+}
+
+function PasswordVisibilityButton({ visible, onClick, label }: { visible: boolean; onClick: () => void; label: string }) {
+  return <button type="button" onClick={onClick} aria-pressed={visible} aria-label={`${visible ? 'Hide' : 'Show'} ${label}`} title={`${visible ? 'Hide' : 'Show'} ${label}`} className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-text/55 transition hover:text-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">
+    {visible ? <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.8 10.8 0 0112 4c5.4 0 9 5.2 9 5.2a14.5 14.5 0 01-2.3 2.8M6.2 6.2C4.2 7.5 3 9.2 3 9.2S6.6 16 12 16c1.2 0 2.3-.3 3.3-.7" strokeLinecap="round" strokeLinejoin="round"/></svg> : <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 12s3.6-6 9-6 9 6 9 6-3.6 6-9 6-9-6-9-6z" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="12" r="2.5"/></svg>}
+  </button>
 }
