@@ -1,3 +1,4 @@
+import { encodeDemoProfile, setDemoProfileCookie } from "@/lib/life/demo-profile";
 import { NextRequest, NextResponse } from "next/server";
 import {
   authErrorResponse,
@@ -59,6 +60,11 @@ export async function POST(request: NextRequest) {
           profile[key] = String(body.profile?.[key] ?? "")
             .trim()
             .slice(0, 2000);
+        }
+      }
+      if (identity.mode === "demo") {
+        try { encodeDemoProfile(profile); } catch {
+          return NextResponse.json({ error: "Demo profile is too large. Please shorten the profile details." }, { status: 400 });
         }
       }
       await saveProfile(identity, profile);
@@ -163,7 +169,10 @@ export async function POST(request: NextRequest) {
       }
     } else
       return NextResponse.json({ error: "Unknown action" }, { status: 400 });
-    return NextResponse.json(await loadLife(identity));
+    const response = NextResponse.json(await loadLife(identity));
+    if (identity.mode === "demo" && body.action === "profile" && identity.demoProfile)
+      setDemoProfileCookie(response, encodeDemoProfile(identity.demoProfile));
+    return response;
   } catch (error) {
     return (
       authErrorResponse(error) ??

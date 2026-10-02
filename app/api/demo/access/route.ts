@@ -1,3 +1,4 @@
+import { clearDemoProfileCookie } from "@/lib/life/demo-profile";
 import { NextRequest, NextResponse } from "next/server";
 import { clearDemoAccessCookie, demoIsConfigured, hasValidDemoAccess, setDemoAccessCookie, verifyDemoCode } from "@/lib/operations/demo-access";
 import { consumeDemoQuota, recordOperationalEvent } from "@/lib/operations/monitoring";
@@ -16,6 +17,7 @@ export async function POST(request: NextRequest) {
   }
   const response = NextResponse.json({ authorized: true });
   setDemoAccessCookie(response);
+  clearDemoProfileCookie(response);
   await recordOperationalEvent({ eventName: "demo_access", route: "/api/demo/access", statusCode: 200, identityMode: "anonymous", clientKeyHash: quota.clientKeyHash });
   return response;
 }
@@ -23,5 +25,6 @@ export async function POST(request: NextRequest) {
 export async function DELETE() {
   const response = NextResponse.json({ authorized: false });
   clearDemoAccessCookie(response);
+  clearDemoProfileCookie(response);
   return response;
 }

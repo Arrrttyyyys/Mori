@@ -1,3 +1,4 @@
+import { clearDemoProfileCookie } from "@/lib/life/demo-profile";
 import { NextRequest, NextResponse } from 'next/server'
 import { getConsent, listAudit, listIncidents, readinessGates, setConsent } from '@/lib/pilot'
 import { authErrorResponse, requirePatientRole, requireRequestIdentity } from '@/lib/auth/server-auth'
@@ -91,7 +92,9 @@ export async function DELETE(request: NextRequest, { params: routeParams }: { pa
     if (!quota.allowed) return NextResponse.json({ error: 'The demo reset limit has been reached. Please try again later.' }, { status: 429, headers: { 'Retry-After': String(quota.retryAfter) } })
     resetFictionalDemo(params.userId)
     await recordOperationalEvent({ eventName: 'demo_reset', route: '/api/pilot/[userId]', statusCode: 200, identityMode: 'demo', clientKeyHash: quota.clientKeyHash })
-    return NextResponse.json({ reset: true })
+    const response = NextResponse.json({ reset: true })
+    clearDemoProfileCookie(response)
+    return response
   } catch (error) {
     return authErrorResponse(error) ?? NextResponse.json({ error: 'Failed to reset demo' }, { status: 500 })
   }

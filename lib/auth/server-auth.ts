@@ -1,3 +1,5 @@
+import { readDemoProfile } from "@/lib/life/demo-profile";
+import type { LifeProfile } from "@/lib/life/types";
 import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
@@ -13,6 +15,7 @@ export type RequestIdentity =
       mode: "demo";
       userId: typeof PILOT_DEMO_ACCOUNT.userId;
       actorId: "demo_supervisor";
+      demoProfile?: LifeProfile;
     }
   | {
       mode: "supabase";
@@ -52,6 +55,7 @@ export async function requireRequestIdentity(
       mode: "demo",
       userId: PILOT_DEMO_ACCOUNT.userId,
       actorId: "demo_supervisor",
+      demoProfile: readDemoProfile(request),
     };
   }
 

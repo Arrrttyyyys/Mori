@@ -30,7 +30,11 @@ export function resetDemoLife() {
   globalStore.moriDemoMemoryDetails = undefined;
 }
 export async function loadLife(identity: RequestIdentity): Promise<LifeData> {
-  if (identity.mode === "demo") return structuredClone(demoLife());
+  if (identity.mode === "demo") {
+    const life = structuredClone(demoLife());
+    if (identity.demoProfile) life.profile = structuredClone(identity.demoProfile);
+    return life;
+  }
   const [profile, records] = await Promise.all([
     identity.client
       .from("patient_profiles")
@@ -61,6 +65,7 @@ export async function saveProfile(
 ) {
   if (identity.mode === "demo") {
     demoLife().profile = profile;
+    identity.demoProfile = profile;
     return;
   }
   const { error } = await identity.client.from("patient_profiles").upsert({
