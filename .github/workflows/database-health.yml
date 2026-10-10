@@ -1,0 +1,29 @@
+name: Database health check
+
+on:
+  schedule:
+    # Four checks a day, away from the busiest start-of-hour period.
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-health
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check deployed database
+        run: node scripts/monitor-check.cjs --health-only
+        env:
+          MORI_APP_URL: ${{ vars.MORI_APP_URL }}
+          MORI_OPERATIONS_TOKEN: ${{ secrets.MORI_OPERATIONS_TOKEN }}
