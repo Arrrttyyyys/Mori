@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const identity = await requireRequestIdentity(request);
     if (identity.mode !== "supabase") {
       return NextResponse.json(
-        { error: "The guided demo does not require account onboarding." },
+        { error: "The demo account does not require account onboarding." },
         { status: 400 },
       );
     }

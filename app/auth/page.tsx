@@ -246,7 +246,7 @@ export default function Auth() {
             <div className="flex-1 border-t border-secondary/50"></div>
           </div>
 
-          {/* Guided demo */}
+          {/* Demo Account */}
           <div className="space-y-3">
             <label htmlFor="demo-code" className="block text-sm font-medium text-text/80">Demo access code</label>
             <div className="relative">
@@ -259,7 +259,7 @@ export default function Auth() {
               onClick={async () => { setError(''); setDemoSubmitting(true); const result = await enterDemo(demoCode); if (!result.ok) setError(result.error || 'Demo access is unavailable.'); setDemoSubmitting(false) }}
               className="w-full bg-secondary/40 border-2 border-primary/30 text-text py-4 rounded-xl hover:border-primary transition-colors duration-500 text-lg font-medium shadow-md"
             >
-              {demoSubmitting ? 'Checking access…' : 'Enter the guided demo'}
+              {demoSubmitting ? 'Checking access…' : 'Demo Account'}
             </button>
             <p className="text-center text-sm leading-relaxed text-text/60">Uses fictional sample memories and does not create an account.</p>
           </div>
