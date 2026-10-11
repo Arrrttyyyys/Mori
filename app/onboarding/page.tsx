@@ -29,7 +29,7 @@ export default function OnboardingPage() {
         </p>
         <div className="mt-10 grid gap-4">
           {ACCOUNT_RELATIONSHIPS.map((option) => (
-            <label key={option.value} className={`cursor-pointer rounded-2xl border-2 bg-white p-6 shadow-sm transition ${choice === option.value ? "border-primary ring-4 ring-primary/10" : "border-secondary"}`}>
+            <label key={option.value} className={`cursor-pointer rounded-2xl border-2 bg-white p-6 shadow-xs transition ${choice === option.value ? "border-primary ring-4 ring-primary/10" : "border-secondary"}`}>
               <span className="flex items-start gap-4">
                 <input type="radio" name="relationship" value={option.value} checked={choice === option.value} onChange={() => setChoice(option.value)} className="mt-1 h-5 w-5 accent-primary" />
                 <span>

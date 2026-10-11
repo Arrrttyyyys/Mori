@@ -57,7 +57,7 @@ export default function MemorySessions() {
         <header className="mb-7">
           <Link
             href="/room"
-            className="inline-flex min-h-11 items-center rounded-full px-3 text-base text-text/60 transition-colors hover:bg-white/60 hover:text-text focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+            className="inline-flex min-h-11 items-center rounded-full px-3 text-base text-text/60 transition-colors hover:bg-white/60 hover:text-text focus-visible:outline-hidden focus-visible:ring-4 focus-visible:ring-primary/20"
           >
             <svg
               className="w-5 h-5 mr-2"
@@ -87,7 +87,7 @@ export default function MemorySessions() {
             </p>
 
             {!isWaiting ? (
-              <button type="button" onClick={handleStartSession} className="mt-9 inline-flex min-h-16 items-center gap-3 rounded-full bg-primary-dark px-8 py-4 text-xl font-semibold text-white shadow-[0_14px_32px_rgba(67,84,69,.2)] transition hover:-translate-y-0.5 hover:bg-[#4c604f] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30">
+              <button type="button" onClick={handleStartSession} className="mt-9 inline-flex min-h-16 items-center gap-3 rounded-full bg-primary-dark px-8 py-4 text-xl font-semibold text-white shadow-[0_14px_32px_rgba(67,84,69,.2)] transition hover:-translate-y-0.5 hover:bg-[#4c604f] focus-visible:outline-hidden focus-visible:ring-4 focus-visible:ring-primary/30">
                 Sit with Mori <span aria-hidden="true">→</span>
               </button>
             ) : (
@@ -97,15 +97,15 @@ export default function MemorySessions() {
                   <p className="text-lg leading-relaxed text-text/65">Take a breath or a quiet moment. You decide when the conversation begins.</p>
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  <button type="button" onClick={handleReadyToBegin} disabled={loading || starting || !userId} className="min-h-16 rounded-full bg-primary-dark px-8 py-4 text-xl font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#4c604f] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50">{starting ? 'Getting comfortable…' : 'I’m ready'}</button>
-                  <button type="button" disabled={starting} onClick={() => { setIsWaiting(false); setError('') }} className="min-h-16 rounded-full border border-primary/25 bg-white/40 px-7 py-4 text-lg font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 disabled:opacity-50">Maybe later</button>
+                  <button type="button" onClick={handleReadyToBegin} disabled={loading || starting || !userId} className="min-h-16 rounded-full bg-primary-dark px-8 py-4 text-xl font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-[#4c604f] focus-visible:outline-hidden focus-visible:ring-4 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50">{starting ? 'Getting comfortable…' : 'I’m ready'}</button>
+                  <button type="button" disabled={starting} onClick={() => { setIsWaiting(false); setError('') }} className="min-h-16 rounded-full border border-primary/25 bg-white/40 px-7 py-4 text-lg font-semibold focus-visible:outline-hidden focus-visible:ring-4 focus-visible:ring-primary/20 disabled:opacity-50">Maybe later</button>
                 </div>
               </div>
             )}
             {error && <div role="alert" className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800"><p>{error}</p><p className="mt-1 text-sm">Nothing was started. You can try again when ready.</p></div>}
           </div>
 
-          <aside className="order-1 rounded-[2.5rem] border border-white/80 bg-[#fbf8f2]/85 p-4 shadow-[0_26px_70px_rgba(70,61,49,0.13)] backdrop-blur-sm lg:order-2">
+          <aside className="order-1 rounded-[2.5rem] border border-white/80 bg-[#fbf8f2]/85 p-4 shadow-[0_26px_70px_rgba(70,61,49,0.13)] backdrop-blur-xs lg:order-2">
             <div className="relative overflow-hidden rounded-[2rem] bg-[#dfe7dc] px-7 pb-7 pt-10 sm:px-10">
               <div aria-hidden="true" className="absolute -right-12 -top-12 h-44 w-44 rounded-full border border-[#93a994]/35" />
               <div aria-hidden="true" className="absolute -right-2 top-2 h-28 w-28 rounded-full border border-[#93a994]/30" />

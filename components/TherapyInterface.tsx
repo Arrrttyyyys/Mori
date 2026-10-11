@@ -405,7 +405,7 @@ export default function TherapyInterface({
     .toString()
     .padStart(2, "0")}:${(seconds % 60).toString().padStart(2, "0")}`;
   const sessionButton =
-    "min-h-12 rounded-2xl border border-white/20 px-4 py-3 text-base font-medium text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/60 disabled:cursor-not-allowed disabled:opacity-50";
+    "min-h-12 rounded-2xl border border-white/20 px-4 py-3 text-base font-medium text-white transition-colors hover:bg-white/15 focus-visible:outline-hidden focus-visible:ring-4 focus-visible:ring-white/60 disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
     <main className="min-h-dvh bg-[#18221d] text-text min-[960px]:grid min-[960px]:h-dvh min-[960px]:grid-cols-[minmax(0,1fr)_400px] min-[960px]:overflow-hidden">
@@ -484,7 +484,7 @@ export default function TherapyInterface({
                   />
                 </div>
                 {moriSpeaking && (
-                  <span aria-hidden="true" className="absolute -bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-white/10 bg-[#18221d]/95 px-4 py-2.5 text-sm text-white/80 shadow-xl backdrop-blur-sm">
+                  <span aria-hidden="true" className="absolute -bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-white/10 bg-[#18221d]/95 px-4 py-2.5 text-sm text-white/80 shadow-xl backdrop-blur-xs">
                     <span className="flex h-5 items-center gap-1">
                       <span className={`w-0.5 rounded-full bg-[#dbe3d9] transition-all ${speechBeat ? "h-4" : "h-2"}`} />
                       <span className={`w-0.5 rounded-full bg-[#dbe3d9] transition-all ${speechBeat ? "h-2" : "h-5"}`} />
@@ -502,7 +502,7 @@ export default function TherapyInterface({
               </p>
             </div>
           )}
-          <div className="absolute bottom-4 left-4 z-20 flex items-center gap-3 rounded-2xl bg-black/35 px-4 py-3 backdrop-blur-sm md:bottom-6 md:left-6">
+          <div className="absolute bottom-4 left-4 z-20 flex items-center gap-3 rounded-2xl bg-black/35 px-4 py-3 backdrop-blur-xs md:bottom-6 md:left-6">
             <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#d9e2d7] font-semibold text-[#25352c]">You</span>
             <div className="hidden sm:block">
               <p className="text-sm font-medium">You are here</p>
@@ -608,14 +608,14 @@ export default function TherapyInterface({
             <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
               <p>{error}</p>
               {failedText && !busy && !paused && (
-                <button type="button" onClick={() => send(failedText)} className="mt-2 min-h-11 rounded-lg border border-red-300 px-3 font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-200">
+                <button type="button" onClick={() => send(failedText)} className="mt-2 min-h-11 rounded-lg border border-red-300 px-3 font-semibold focus-visible:outline-hidden focus-visible:ring-4 focus-visible:ring-red-200">
                   Try that message again
                 </button>
               )}
             </div>
           )}
           {closed ? (
-            <button onClick={onClose} className="min-h-14 w-full rounded-2xl bg-primary px-5 py-3 text-lg font-semibold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30">
+            <button onClick={onClose} className="min-h-14 w-full rounded-2xl bg-primary px-5 py-3 text-lg font-semibold text-white focus-visible:outline-hidden focus-visible:ring-4 focus-visible:ring-primary/30">
               Return to the Mori Room
             </button>
           ) : (
@@ -637,9 +637,9 @@ export default function TherapyInterface({
                 onChange={(event) => setInput(event.target.value)}
                 disabled={busy || paused || ending}
                 placeholder={paused ? "Continue when you are ready" : "Or type here…"}
-                className="min-h-14 min-w-0 flex-1 rounded-2xl border border-primary/25 bg-white px-4 text-lg shadow-sm focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15 disabled:bg-black/5"
+                className="min-h-14 min-w-0 flex-1 rounded-2xl border border-primary/25 bg-white px-4 text-lg shadow-xs focus:border-primary focus:outline-hidden focus:ring-4 focus:ring-primary/15 disabled:bg-black/5"
               />
-              <button disabled={busy || paused || ending || !input.trim()} className="min-h-14 rounded-2xl bg-primary px-5 text-lg font-semibold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-45">
+              <button disabled={busy || paused || ending || !input.trim()} className="min-h-14 rounded-2xl bg-primary px-5 text-lg font-semibold text-white focus-visible:outline-hidden focus-visible:ring-4 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-45">
                 Send
               </button>
             </form>
@@ -659,11 +659,11 @@ export default function TherapyInterface({
                 type="button"
                 disabled={ending}
                 onClick={cancelFinish}
-                className="min-h-14 rounded-2xl border border-primary/25 px-5 text-lg font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20"
+                className="min-h-14 rounded-2xl border border-primary/25 px-5 text-lg font-semibold focus-visible:outline-hidden focus-visible:ring-4 focus-visible:ring-primary/20"
               >
                 Keep talking
               </button>
-              <button type="button" disabled={ending} onClick={finish} className="min-h-14 rounded-2xl bg-[#8e443b] px-5 text-lg font-semibold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#8e443b]/30 disabled:opacity-50">
+              <button type="button" disabled={ending} onClick={finish} className="min-h-14 rounded-2xl bg-[#8e443b] px-5 text-lg font-semibold text-white focus-visible:outline-hidden focus-visible:ring-4 focus-visible:ring-[#8e443b]/30 disabled:opacity-50">
                 {ending ? "Saving…" : "End session"}
               </button>
             </div>

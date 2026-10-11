@@ -52,17 +52,17 @@ export default function WaitlistForm() {
       <div className="grid gap-6 md:grid-cols-2">
         <label className="block">
           <span className="mb-2 block text-base font-medium">Name</span>
-          <input name="name" autoComplete="name" maxLength={120} className="w-full rounded-xl border border-primary/20 bg-background px-4 py-3 text-lg outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
+          <input name="name" autoComplete="name" maxLength={120} className="w-full rounded-xl border border-primary/20 bg-background px-4 py-3 text-lg outline-hidden transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
         </label>
         <label className="block">
           <span className="mb-2 block text-base font-medium">Email address</span>
-          <input name="email" type="email" autoComplete="email" inputMode="email" required maxLength={254} className="w-full rounded-xl border border-primary/20 bg-background px-4 py-3 text-lg outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
+          <input name="email" type="email" autoComplete="email" inputMode="email" required maxLength={254} className="w-full rounded-xl border border-primary/20 bg-background px-4 py-3 text-lg outline-hidden transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
         </label>
       </div>
 
       <label className="mt-6 block">
         <span className="mb-2 block text-base font-medium">What brings you to Mori?</span>
-        <select name="role" required defaultValue="" className="w-full rounded-xl border border-primary/20 bg-background px-4 py-3 text-lg outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15">
+        <select name="role" required defaultValue="" className="w-full rounded-xl border border-primary/20 bg-background px-4 py-3 text-lg outline-hidden transition focus:border-primary focus:ring-2 focus:ring-primary/15">
           <option value="" disabled>Choose one</option>
           {roles.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
@@ -70,7 +70,7 @@ export default function WaitlistForm() {
 
       <label className="mt-6 block">
         <span className="mb-2 block text-base font-medium">What would you like to hear about? <span className="font-normal text-text/55">(optional)</span></span>
-        <textarea name="interest" maxLength={1000} rows={4} placeholder="For example, family access, caregiver support, or future pilot opportunities" className="w-full resize-y rounded-xl border border-primary/20 bg-background px-4 py-3 text-lg outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
+        <textarea name="interest" maxLength={1000} rows={4} placeholder="For example, family access, caregiver support, or future pilot opportunities" className="w-full resize-y rounded-xl border border-primary/20 bg-background px-4 py-3 text-lg outline-hidden transition focus:border-primary focus:ring-2 focus:ring-primary/15" />
       </label>
 
       <label className="sr-only" aria-hidden="true">
