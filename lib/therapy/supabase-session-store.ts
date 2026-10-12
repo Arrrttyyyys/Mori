@@ -2,6 +2,8 @@ import 'server-only'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { TherapyResponse, TherapySession } from './types'
+import { reviewedSessionContext } from './session-continuity'
+import { createAdminServerClient } from '@/lib/supabase/server'
 
 function mapSession(row: any, turns: any[] = []): TherapySession {
   return {
@@ -94,9 +96,25 @@ export class SupabaseSessionStore {
     return (data ?? []).map((row) => mapSession(row))
   }
 
-  async getPreviousSessionsSummary(currentSessionId: string): Promise<string> {
-    const { data, error } = await this.client.from('session_summaries').select('topic, summary, created_at, session_id').eq('owner_id', this.userId).neq('session_id', currentSessionId).order('created_at', { ascending: false }).limit(3)
+  async getPreviousSessionsSummary(currentSessionId: string, safeText: (text: string) => boolean): Promise<string> {
+    const { data: sessions, error: sessionError } = await this.client.from('therapy_sessions')
+      .select('id').eq('owner_id', this.userId).eq('status', 'closed')
+      .neq('id', currentSessionId).order('started_at', { ascending: false }).limit(20)
+    if (sessionError) throw sessionError
+    if (!sessions?.length) return ''
+    const { data: summaries, error } = await this.client.from('session_summaries')
+      .select('id, topic, summary, updated_at, created_at, session_id')
+      .eq('owner_id', this.userId).in('session_id', sessions.map(s => s.id))
+      .order('created_at', { ascending: false }).limit(20)
     if (error) throw error
-    return (data ?? []).map((item) => `${new Date(item.created_at).toLocaleDateString()}: ${item.topic} — ${item.summary}`).join('; ')
+    if (!summaries?.length) return ''
+    // Read every review for this already-authorized workspace, including other reviewers' withdrawals.
+    const { data: reviews, error: reviewError } = await createAdminServerClient().from('caregiver_reviews')
+      .select('resource_id, decision, correction, created_at')
+      .eq('patient_id', this.userId).eq('resource_type', 'summary')
+      .in('resource_id', summaries.map(s => s.id))
+      .order('created_at', { ascending: false }).limit(100)
+    if (reviewError) throw reviewError
+    return reviewedSessionContext(summaries, reviews ?? [], safeText)
   }
 }

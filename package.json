@@ -15,7 +15,7 @@
     "test:staging-privacy": "node scripts/staging-privacy-drill.cjs",
     "verify:staging-restore": "node scripts/verify-staging-restore.cjs",
     "test:secrets": "node scripts/security-scan.cjs",
-    "test:pilot": "npm run test:types && npm run test:memory-engine && npm run test:safety && npm run test:turn-taking && npm run test:security && npm run test:secrets && npm run test:life",
+    "test:pilot": "npm run test:types && npm run test:memory-engine && npm run test:safety && npm run test:turn-taking && npm run test:security && npm run test:secrets && npm run test:life && npm run test:continuity",
     "test:life": "tsc -p tests/life.tsconfig.json && node tests/life-policy.cjs",
     "test:workflow": "node tests/life-workflow.cjs",
     "db:status": "node scripts/database.cjs status",
@@ -27,7 +27,8 @@
     "monitor:check": "node scripts/monitor-check.cjs",
     "test:local-provider": "tsc lib/therapy/therapy-brain.ts --module commonjs --moduleResolution node --target es2020 --esModuleInterop --skipLibCheck --outDir /tmp/mori-local-test --noEmit false && node tests/local-provider.cjs",
     "test:communication": "tsc lib/therapy/therapy-brain.ts lib/therapy/types.ts --module commonjs --moduleResolution node --target es2020 --esModuleInterop --skipLibCheck --outDir /tmp/mori-communication-eval --noEmit false && node tests/communication-eval.cjs",
-    "test:long-conversation": "tsc lib/therapy/therapy-brain.ts lib/therapy/types.ts --module commonjs --moduleResolution node --target es2020 --esModuleInterop --skipLibCheck --outDir /tmp/mori-long-eval --noEmit false && node tests/long-conversation-eval.cjs"
+    "test:long-conversation": "tsc lib/therapy/therapy-brain.ts lib/therapy/types.ts --module commonjs --moduleResolution node --target es2020 --esModuleInterop --skipLibCheck --outDir /tmp/mori-long-eval --noEmit false && node tests/long-conversation-eval.cjs",
+    "test:continuity": "tsc lib/therapy/session-continuity.ts --module commonjs --target es2020 --skipLibCheck --outDir /tmp/mori-continuity-test --noEmit false && node tests/session-continuity.cjs && node tests/session-continuity-route.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

@@ -282,7 +282,11 @@ export async function POST(request: NextRequest) {
       pending_memory_id: session.pending_memory_id ?? null,
     };
     const smallTalkOnly = turnCountBefore < 2 && !pendingMemory;
+    const previousSessions = persistentStore
+      ? await persistentStore.getPreviousSessionsSummary(session.session_id, prepared.safeText)
+      : "";
     const extraContext = {
+      previous_sessions_summary: previousSessions,
       memory_library: (smallTalkOnly ? [] : prepared.relevant).map((m) => ({
         id: m.id,
         title: m.title,

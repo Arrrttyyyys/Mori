@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import SessionContinuityReview from "@/components/SessionContinuityReview";
 import LifeShell from "@/components/LifeShell";
 import { useAuth } from "@/contexts/AuthContext";
 export default function Insights() {
@@ -64,6 +65,7 @@ export default function Insights() {
               </p>
             ))}
           </section>
+          <SessionContinuityReview />
           <details className="mt-8">
             <summary className="cursor-pointer text-xl">
               Selection history for caregivers
